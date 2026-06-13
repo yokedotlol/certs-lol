@@ -94,8 +94,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font
 .grade-A-plus,.grade-A{color:var(--ok)}.grade-B{color:var(--info)}.grade-C{color:var(--warn)}.grade-D,.grade-F{color:var(--err)}
 .grade-domain{font-size:18px;font-weight:700;letter-spacing:-0.02em;margin:0}
 .grade-meta{font-size:11px;color:var(--dim);font-family:var(--mono);margin-top:4px}
-.trust-strip{margin-top:0.75rem;font-size:10px;color:var(--dim);font-family:var(--mono)}
-.trust-strip span{color:var(--ok)}
+
 
 .err-msg{margin-top:2rem;padding:16px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.2);border-radius:8px;color:var(--err);font-family:var(--mono);font-size:13px}
 
@@ -247,8 +246,7 @@ function renderResult(d: ScanResult, hook: string[], isIP: boolean, rateLimit?: 
     <h1 class="grade-domain">${esc(d.target)}</h1>
     <div class="grade-meta">${d.probe_ms}ms${cached}${scannedAt ? ` · ${scannedAt}` : ''} ${rescanBtn}</div>
   </div>
-</div>
-<div class="trust-strip"><span>✓</span> no key · no accounts · no tracking · &lt; 5s · api-first</div>`;
+</div>`;
 
   // Certificate
   s += section('Certificate', [
