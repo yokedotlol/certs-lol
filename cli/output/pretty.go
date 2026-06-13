@@ -221,8 +221,12 @@ func Pretty(w io.Writer, target string, result probe.SSLResult, enrichResult *en
 		}
 	}
 
-	// Footer
-	fmt.Fprintf(w, "\n  → Full report: https://certs.lol/%s\n\n", target)
+	// Footer — only show full report link for standard HTTPS targets
+	if !strings.Contains(target, ":") || strings.HasSuffix(target, ":443") {
+		fmt.Fprintf(w, "\n  → Full report: https://certs.lol/%s\n\n", target)
+	} else {
+		fmt.Fprintln(w)
+	}
 }
 
 // GradeOnly prints just the letter grade.
