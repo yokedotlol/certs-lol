@@ -7,6 +7,8 @@ import { evaluateCompliance } from './compliance';
 const CACHE_TTL = 21600; // 6 hours
 const RATE_LIMIT = 60;
 
+const INSTALL_SCRIPT = "#!/usr/bin/env bash\n# Install certs CLI \u2014 curl -sSL https://certs.lol/install.sh | bash\nset -euo pipefail\n\nREPO=\"yokedotlol/certs-lol\"\n\necho \"Installing certs...\"\n\n# Detect OS/arch\nOS=$(uname -s | tr '[:upper:]' '[:lower:]')\nARCH=$(uname -m)\ncase \"$ARCH\" in\n  x86_64|amd64) ARCH=\"amd64\" ;;\n  arm64|aarch64) ARCH=\"arm64\" ;;\n  *) echo \"error: unsupported architecture: $ARCH\" >&2; exit 1 ;;\nesac\n\n# Get latest release tag\nLATEST=$(curl -sfL \"https://api.github.com/repos/$REPO/releases/latest\" | grep '\"tag_name\"' | head -1 | sed 's/.*\"tag_name\": *\"//;s/\".*//')\nif [ -z \"$LATEST\" ]; then\n  echo \"error: could not determine latest release\" >&2; exit 1\nfi\n\necho \"  Version: $LATEST ($OS/$ARCH)\"\n\n# Build download URL\nEXT=\"tar.gz\"\n[ \"$OS\" = \"windows\" ] && EXT=\"zip\"\nURL=\"https://github.com/$REPO/releases/download/$LATEST/certs_${OS}_${ARCH}.${EXT}\"\n\n# Pick install dir\nif [ -w /usr/local/bin ]; then\n  INSTALL_DIR=\"/usr/local/bin\"\nelif [ -d \"$HOME/.local/bin\" ]; then\n  INSTALL_DIR=\"$HOME/.local/bin\"\nelse\n  mkdir -p \"$HOME/.local/bin\"\n  INSTALL_DIR=\"$HOME/.local/bin\"\nfi\n\n# Download and extract\nTMP=$(mktemp -d)\ntrap 'rm -rf \"$TMP\"' EXIT\n\necho \"  Downloading from GitHub Releases...\"\ncurl -sfL -o \"$TMP/certs.$EXT\" \"$URL\" || {\n  echo \"error: download failed \u2014 $URL\" >&2; exit 1\n}\n\nif [ \"$EXT\" = \"tar.gz\" ]; then\n  tar -xzf \"$TMP/certs.$EXT\" -C \"$TMP\"\nelse\n  unzip -q \"$TMP/certs.$EXT\" -d \"$TMP\"\nfi\n\n# Install binary\ncp \"$TMP/certs\" \"$INSTALL_DIR/certs\"\nchmod +x \"$INSTALL_DIR/certs\"\n\necho \"  \u2713 Installed to $INSTALL_DIR/certs\"\n\n# Verify\nif \"$INSTALL_DIR/certs\" version &>/dev/null; then\n  echo \"  $($INSTALL_DIR/certs version)\"\nfi\n\n# Check PATH\nif ! echo \"$PATH\" | tr ':' '\\n' | grep -qx \"$INSTALL_DIR\"; then\n  echo \"\"\n  echo \"  Add to your PATH:\"\n  echo \"    export PATH=\\\"$INSTALL_DIR:\\$PATH\\\"\"\nfi\n\necho \"\"\necho \"  Try it: certs example.com\"\n";
+
 function rateLimitMessage(retryMin: number, target: string): string {
   return `<div class="err-title">Rate limit reached</div>
 <p>Requests are limited to ${RATE_LIMIT} per hour to prevent abuse and keep hosting costs near zero. Try again in ~${retryMin} minute${retryMin === 1 ? '' : 's'}.</p>
@@ -183,6 +185,12 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
 
   if (path === '/cli') {
     return htmlResponse(cliPage());
+  }
+
+  if (path === '/install.sh') {
+    return addHeaders(new Response(INSTALL_SCRIPT, {
+      headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=3600' },
+    }));
   }
 
   // Favicon
@@ -701,6 +709,9 @@ td:first-child{color:#d8d8e0;white-space:nowrap}
 <h2>Install</h2>
 <pre><code># Homebrew
 brew install yokedotlol/tap/certs
+
+# Or one-liner
+curl -sSL https://certs.lol/install.sh | bash
 
 # Or download from GitHub Releases
 curl -sL https://github.com/yokedotlol/certs-lol/releases/latest/download/certs_darwin_arm64.tar.gz | tar xz
