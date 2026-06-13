@@ -4,7 +4,7 @@
  * Stores a sliding window counter with atomic read-increment-write.
  */
 
-const RATE_LIMIT = 20;
+const RATE_LIMIT = 60;
 const RATE_WINDOW = 3600; // 1 hour in seconds
 
 interface RateLimitState {
