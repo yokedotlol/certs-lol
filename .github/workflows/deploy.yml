@@ -1,0 +1,71 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: npx tsc --noEmit
+      - name: Generate wrangler.toml
+        env:
+          KV_ID: ${{ secrets.KV_NAMESPACE_ID }}
+        run: |
+          printf '%s\n' \
+            'name = "certs-lol"' \
+            'main = "src/worker.ts"' \
+            'compatibility_date = "2024-09-23"' \
+            'compatibility_flags = ["nodejs_compat"]' \
+            '' \
+            '[vars]' \
+            'PROBE_URL = "https://yoke-probe.fly.dev"' \
+            '' \
+            '[[kv_namespaces]]' \
+            'binding = "CACHE"' \
+            "id = \"${KV_ID}\"" \
+            '' \
+            '[[durable_objects.bindings]]' \
+            'name = "RATE_LIMITER"' \
+            'class_name = "RateLimiterDO"' \
+            '' \
+            '[[migrations]]' \
+            'tag = "v1"' \
+            'new_classes = ["RateLimiterDO"]' \
+            > wrangler.toml
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+
+  smoke:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for propagation
+        run: sleep 10
+      - name: Smoke test
+        run: |
+          # Homepage
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' https://certs.lol/)
+          if [ "$STATUS" != "200" ]; then echo "Homepage failed: $STATUS"; exit 1; fi
+
+          # API JSON
+          GRADE=$(curl -s -H "Accept: application/json" https://certs.lol/cloudflare.com | jq -r '.grade // empty')
+          if [ -z "$GRADE" ]; then echo "API scan failed"; exit 1; fi
+
+          echo "✅ Smoke tests passed (homepage 200, API returned grade: $GRADE)"
