@@ -1,11 +1,7 @@
 import type { ScanResult } from './worker';
 
-export interface RateLimitInfo {
-  remaining: number;
-  limit: number;
-}
 
-export function html(data?: ScanResult, error?: string, rateLimit?: RateLimitInfo): string {
+export function html(data?: ScanResult, error?: string): string {
   const title = data ? `${data.target} — certs.lol` : 'certs.lol — Fast, API-first TLS scanning.';
   const desc = data ? `TLS scan: ${data.target} scored ${data.grade}. ${data.probe_ms}ms.` : 'Fast, API-first TLS scanning. No accounts, no tracking, no nonsense.';
   const targetVal = data?.target || '';
@@ -96,7 +92,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font
 .grade-meta{font-size:11px;color:var(--dim);font-family:var(--mono);margin-top:4px}
 
 
-.err-msg{margin-top:2rem;padding:16px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.2);border-radius:8px;color:var(--err);font-family:var(--mono);font-size:13px}
+.err-block{margin-top:2rem;padding:20px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.2);border-radius:8px;color:var(--fg);font-family:var(--sans);font-size:13px;line-height:1.6}
+.err-block .err-title{color:var(--err);font-family:var(--mono);font-size:14px;font-weight:600;margin:0 0 12px}
+.err-block p{margin:8px 0;color:var(--muted)}
+.err-block a{color:var(--accent);text-decoration:none}
+.err-block a:hover{text-decoration:underline}
 
 .section{margin-top:1.75rem}
 .sec-label{font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:var(--dim);font-family:var(--mono);font-weight:600;margin:0 0 6px;padding-bottom:6px;border-bottom:1px solid var(--border);transition:border-color .25s,color .25s}
@@ -167,8 +167,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font
 
 <main id="main">
 
-${error ? `<div class="err-msg">${esc(error)}</div>` : ''}
-${data ? renderResult(data, randomHook, isIP, rateLimit) : (error ? '' : renderEmpty())}
+${error ? `<div class="err-block">${error}</div>` : ''}
+${data ? renderResult(data, randomHook, isIP) : (error ? '' : renderEmpty())}
 
 </main>
 
@@ -211,7 +211,7 @@ function renderEmpty(): string {
 </div>`;
 }
 
-function renderResult(d: ScanResult, hook: string[], isIP: boolean, rateLimit?: RateLimitInfo): string {
+function renderResult(d: ScanResult, hook: string[], isIP: boolean): string {
   const gradeClass = d.grade === 'A+' ? 'A-plus' : d.grade.charAt(0);
   const cached = d._meta?.cache_hit ? ' · <span class="cache-tag" title="Cached result">cached</span>' : '';
   const scannedAt = d.scanned_at ? timeAgo(d.scanned_at) : '';
@@ -367,15 +367,6 @@ function renderResult(d: ScanResult, hook: string[], isIP: boolean, rateLimit?: 
     }
     compRows.push(row('', 'transport-layer checks only', 'off'));
     s += section('Compliance', compRows);
-  }
-
-  // Rate limit pill
-  if (rateLimit) {
-    const pct = rateLimit.remaining / rateLimit.limit;
-    const color = rateLimit.remaining <= 0 ? 'var(--err)' : pct <= 0.25 ? 'var(--warn)' : 'var(--dim)';
-    s += `<div style="margin-top:1.5rem;font-family:var(--mono);font-size:11px;color:${color};opacity:${pct <= 0.25 ? '1' : '0.6'}">`
-      + `⚡ ${rateLimit.remaining}/${rateLimit.limit} scans remaining`
-      + `</div>`;
   }
 
   // Yoke hook (domains only)

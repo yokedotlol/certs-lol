@@ -7,6 +7,12 @@ import { evaluateCompliance } from './compliance';
 const CACHE_TTL = 21600; // 6 hours
 const RATE_LIMIT = 20;
 
+function rateLimitMessage(retryMin: number, target: string): string {
+  return `<div class="err-title">Rate limit reached</div>
+<p>Fresh scans are limited to ${RATE_LIMIT} per hour to keep hosting costs near zero. Cached results don't count against this limit — try again in ~${retryMin} minute${retryMin === 1 ? '' : 's'} and your scan will be served from cache instantly.</p>
+<p>You can also get a full domain report (including TLS) at <a href="https://yoke.lol/${target}">yoke.lol/${target}</a>.</p>`;
+}
+
 const SECURITY_HEADERS: Record<string, string> = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
@@ -203,42 +209,39 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
   const clientIP = getClientIP(request);
   const forceRescan = url.searchParams.has('force');
 
-  // Rate limit check — every request counts (cache hit or miss)
-  const rl = await checkRateLimit(clientIP, env);
-  if (!rl.allowed) {
-    ctx.waitUntil(trackScan(env, { target, cache_hit: false, rate_limited: true }));
-    const body = { error: 'Rate limit exceeded', retry_after: rl.retryAfter };
-    if (wantsJSON(request)) {
-      return jsonResponse(body, 429, {
-        'Retry-After': String(rl.retryAfter),
-        'X-RateLimit-Limit': String(RATE_LIMIT),
-        'X-RateLimit-Remaining': '0',
-        'X-RateLimit-Reset': String(rl.retryAfter),
-      });
-    }
-    return htmlResponse(html(undefined, 'Rate limit exceeded. Try again in ' + rl.retryAfter + 's.'), 429);
-  }
-
-  // Check cache (skip on ?force)
+  // Check cache first (free — no rate limit cost)
   const cacheKey = `scan:${target.toLowerCase()}`;
   const cached = forceRescan ? null : await env.CACHE.get(cacheKey, 'json') as ScanResult | null;
 
   if (cached) {
     const result = { ...cached, _meta: { ...cached._meta, cache_hit: true } };
-
-    // Track cache hit (non-blocking)
     ctx.waitUntil(trackScan(env, { target, cache_hit: true }));
 
     if (wantsJSON(request)) {
       return jsonResponse(result, 200, {
         'X-Cache': 'HIT',
-        'X-RateLimit-Limit': String(RATE_LIMIT),
-        'X-RateLimit-Remaining': String(rl.remaining),
         'Access-Control-Allow-Origin': '*',
         'Cache-Control': 'public, max-age=300',
       });
     }
-    return htmlResponse(html(result, undefined, { remaining: rl.remaining, limit: RATE_LIMIT }));
+    return htmlResponse(html(result));
+  }
+
+  // Rate limit only fresh scans (probe calls cost real resources)
+  const rl = await checkRateLimit(clientIP, env);
+  if (!rl.allowed) {
+    ctx.waitUntil(trackScan(env, { target, cache_hit: false, rate_limited: true }));
+    const retryMin = Math.ceil((rl.retryAfter || 60) / 60);
+    const body = { error: 'Rate limit exceeded', retry_after: rl.retryAfter || 60 };
+    if (wantsJSON(request)) {
+      return jsonResponse(body, 429, {
+        'Retry-After': String(rl.retryAfter || 60),
+        'X-RateLimit-Limit': String(RATE_LIMIT),
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': String(rl.retryAfter || 60),
+      });
+    }
+    return htmlResponse(html(undefined, rateLimitMessage(retryMin, target)), 429);
   }
 
   // Call probe + enrichment in parallel
@@ -341,7 +344,7 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
         'Cache-Control': 'public, max-age=300',
       });
     }
-    return htmlResponse(html(result, undefined, { remaining: rl.remaining, limit: RATE_LIMIT }));
+    return htmlResponse(html(result));
 
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -390,7 +393,7 @@ Scan a domain: GET https://certs.lol/{domain}
 Scan an IP: GET https://certs.lol/{ip}
 API docs: https://certs.lol/api/docs
 
-No authentication required. Rate limit: 20 scans/hour per IP. Results cached for 6h. Add ?force to bypass cache.
+No authentication required. Rate limit: 20 fresh scans/hour per IP (cached results are free). Add ?force to bypass cache.
 
 ## What it checks
 
@@ -466,10 +469,11 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
 
 <h2>Rate Limiting</h2>
 <ul>
-<li>20 scans per hour per IP</li>
+<li>20 fresh scans per hour per IP (cached results are free and don't count)</li>
 <li>Results cached for 6h — add <code>?force</code> to bypass</li>
 <li>429 response with <code>Retry-After</code> header when exceeded</li>
 </ul>
+<p>Rate limits exist to prevent abuse and keep hosting costs near zero. If you need more volume, grab the <a href="https://github.com/yokedotlol/certs-lol">source</a> and run your own instance, or use the full domain report at <a href="https://yoke.lol">yoke.lol</a>.</p>
 
 <h2>Response Shape</h2>
 <pre><code>{
@@ -620,7 +624,8 @@ ${metaTags('Terms of Service', 'certs.lol terms of service.')}
 <p>certs.lol is a free TLS scanning tool. It probes publicly-observable TLS configurations and reports what it finds.</p>
 
 <h2>Use it reasonably</h2>
-<p>Don't abuse the service. Rate limits are enforced at 20 scans per hour per IP. Automated scanning at scale without coordination is not welcome — talk to us first.</p>
+<p>Rate limits are enforced at 20 fresh scans per hour per IP. Cached results (served for 6 hours after a scan) are free and unlimited. These limits exist to prevent abuse and keep hosting costs near zero — certs.lol runs on a shoestring so it can stay free.</p>
+<p>If you hit the limit, try again in a few minutes (your previous scan is likely cached) or check <a href="https://yoke.lol">yoke.lol</a> for a full domain report including TLS. Automated scanning at scale without coordination is not welcome — talk to us first.</p>
 
 <h2>No warranty</h2>
 <p>This tool is provided as-is. Scan results reflect what we observe at scan time and may not represent the complete security posture of any target. Do not use certs.lol as your sole basis for security decisions.</p>
