@@ -173,6 +173,7 @@ ${data ? renderResult(data, randomHook, isIP) : (error ? '' : renderEmpty())}
 </main>
 
 <footer class="foot">
+  <a href="/cli">cli</a>
   <a href="/api/docs">docs</a>
   <a href="https://github.com/yokedotlol/certs-lol">github</a>
   <a href="/privacy">privacy</a>

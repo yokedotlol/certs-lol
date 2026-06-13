@@ -10,7 +10,8 @@ const RATE_LIMIT = 60;
 function rateLimitMessage(retryMin: number, target: string): string {
   return `<div class="err-title">Rate limit reached</div>
 <p>Requests are limited to ${RATE_LIMIT} per hour to prevent abuse and keep hosting costs near zero. Try again in ~${retryMin} minute${retryMin === 1 ? '' : 's'}.</p>
-<p>You can also get a full domain report (including TLS) at <a href="https://yoke.lol/${target}">yoke.lol/${target}</a>.</p>`;
+<p>You can also get a full domain report (including TLS) at <a href="https://yoke.lol/${target}">yoke.lol/${target}</a>.</p>
+<p>Or <a href="/cli">install the CLI</a> — run locally, unlimited, no rate limits.</p>`;
 }
 
 const SECURITY_HEADERS: Record<string, string> = {
