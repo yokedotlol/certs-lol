@@ -7,7 +7,9 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
+	"io"
 	"math"
 	"net"
 	"strings"
@@ -47,7 +49,7 @@ func Scan(target string, opts Options) SSLResult {
 		serverName = "" // IP target — no SNI
 	}
 
-	var conn *tls.Conn
+	var sc scanConn
 	var connState *tls.ConnectionState
 	var connectErr error
 
@@ -55,21 +57,37 @@ func Scan(target string, opts Options) SSLResult {
 
 	if proto != "" {
 		// STARTTLS: negotiate on plaintext, then upgrade
+		var conn *tls.Conn
 		conn, connectErr = DialSTARTTLS(addr, serverName, proto, timeout)
 		if connectErr != nil {
-			// Retry with InsecureSkipVerify
 			conn, connectErr = dialSTARTTLSInsecure(addr, serverName, proto, timeout)
 		}
+		if conn != nil {
+			sc = &stdConn{conn}
+		}
 	} else {
-		// Direct TLS
+		// Direct TLS — try stdlib first, fall back to uTLS on EOF
 		tlsConf := &tls.Config{
 			ServerName:         serverName,
 			InsecureSkipVerify: false,
+			NextProtos:         []string{"h2", "http/1.1"},
 		}
-		conn, connectErr = dialTLS(addr, serverName, timeout, tlsConf)
-		if connectErr != nil {
+		conn, err := dialTLS(addr, serverName, timeout, tlsConf)
+		if err != nil {
 			tlsConf.InsecureSkipVerify = true
-			conn, connectErr = dialTLS(addr, serverName, timeout, tlsConf)
+			conn, err = dialTLS(addr, serverName, timeout, tlsConf)
+		}
+		if err != nil && isEOFLike(err) {
+			// Server rejected Go's default ClientHello — retry with
+			// a Chrome-mimicking fingerprint via uTLS.
+			sc, connectErr = dialUTLS(addr, serverName, timeout, false)
+			if connectErr != nil {
+				sc, connectErr = dialUTLS(addr, serverName, timeout, true)
+			}
+		} else if err != nil {
+			connectErr = err
+		} else {
+			sc = &stdConn{conn}
 		}
 	}
 
@@ -78,9 +96,9 @@ func Scan(target string, opts Options) SSLResult {
 		errStr := connectErr.Error()
 		return SSLResult{Grade: "T", ProbeMs: elapsed, Error: &errStr}
 	}
-	defer conn.Close()
+	defer sc.Close()
 
-	state := conn.ConnectionState()
+	state := sc.StdConnectionState()
 	connState = &state
 
 	// Detect supported protocols
@@ -354,4 +372,21 @@ func extractChainCerts(state *tls.ConnectionState, leaf *x509.Certificate) []Cha
 		})
 	}
 	return certs
+}
+
+
+// isEOFLike returns true when the error looks like the remote server
+// dropped the connection during the TLS handshake — a sign that the
+// server rejected Go's default ClientHello fingerprint.
+func isEOFLike(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+		return true
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "EOF") ||
+		strings.Contains(msg, "connection reset by peer") ||
+		strings.Contains(msg, "connection refused")
 }
