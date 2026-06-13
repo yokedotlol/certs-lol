@@ -15,7 +15,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data: https://yoke.lol; frame-ancestors 'none'; base-uri 'self'",
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
   'Cross-Origin-Opener-Policy': 'same-origin',
-  'Cross-Origin-Embedder-Policy': 'require-corp',
+  'Cross-Origin-Embedder-Policy': 'credentialless',
 };
 
 function isIP(target: string): boolean {
