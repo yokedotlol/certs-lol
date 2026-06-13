@@ -87,6 +87,10 @@ type Options struct {
 
 	// SkipCipherEnum skips per-cipher probing (faster, less detail).
 	SkipCipherEnum bool
+
+	// Verbose, if non-nil, is called with diagnostic messages about
+	// the connection process (DNS resolution, each dial attempt, fallback).
+	Verbose func(string)
 }
 
 // DefaultOptions returns probe options suitable for the hosted API

@@ -79,5 +79,25 @@ func CheckSSRF(host string, allowPrivate bool) ([]net.IP, error) {
 		}
 	}
 
+	// Sort IPs: prefer IPv4 over IPv6 for compatibility.
+	// Many Go CLI binaries are built with CGO_ENABLED=0, which uses
+	// Go's pure-Go resolver that may return IPv6 first. Unlike curl,
+	// we don't implement Happy Eyeballs, so prefer the more reliable
+	// address family.
+	sortIPv4First(ips)
+
 	return ips, nil
+}
+
+// sortIPv4First re-orders a slice of IPs so IPv4 addresses come first.
+func sortIPv4First(ips []net.IP) {
+	j := 0
+	for i, ip := range ips {
+		if ip.To4() != nil {
+			if i != j {
+				ips[i], ips[j] = ips[j], ips[i]
+			}
+			j++
+		}
+	}
 }

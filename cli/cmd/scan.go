@@ -26,6 +26,7 @@ type ScanOptions struct {
 	JSON          bool
 	Table         bool
 	GradeOnly     bool
+	Verbose       bool
 	Version       string
 }
 
@@ -86,6 +87,11 @@ func scanTarget(target string, opts ScanOptions) ScanResult {
 	probeOpts.StartTLSProto = opts.StartTLSProto
 	if opts.NoPrivate {
 		probeOpts.AllowPrivate = false
+	}
+	if opts.Verbose {
+		probeOpts.Verbose = func(msg string) {
+			fmt.Fprintf(os.Stderr, "%s\n", msg)
+		}
 	}
 
 	// Auto-detect STARTTLS from port if not explicitly set

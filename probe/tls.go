@@ -36,11 +36,19 @@ func Scan(target string, opts Options) SSLResult {
 	}
 
 	// Resolve and SSRF-check the target
+	verbose := opts.Verbose
 	ips, err := CheckSSRF(target, opts.AllowPrivate)
 	if err != nil {
 		elapsed := int(time.Since(start).Milliseconds())
 		errStr := err.Error()
 		return SSLResult{Grade: "T", ProbeMs: elapsed, Error: &errStr}
+	}
+	if verbose != nil {
+		ipStrs := make([]string, len(ips))
+		for i, ip := range ips {
+			ipStrs[i] = ip.String()
+		}
+		verbose(fmt.Sprintf("resolved %s → %s", target, strings.Join(ipStrs, ", ")))
 	}
 
 	// Dial TLS (direct or via STARTTLS)
@@ -52,42 +60,35 @@ func Scan(target string, opts Options) SSLResult {
 	var sc scanConn
 	var connState *tls.ConnectionState
 	var connectErr error
+	var connectedAddr string // the IP:port that actually connected
 
-	addr := net.JoinHostPort(ips[0].String(), fmt.Sprintf("%d", opts.Port))
+	port := fmt.Sprintf("%d", opts.Port)
 
 	if proto != "" {
 		// STARTTLS: negotiate on plaintext, then upgrade
-		var conn *tls.Conn
-		conn, connectErr = DialSTARTTLS(addr, serverName, proto, timeout)
-		if connectErr != nil {
-			conn, connectErr = dialSTARTTLSInsecure(addr, serverName, proto, timeout)
-		}
-		if conn != nil {
-			sc = &stdConn{conn}
+		// Try each resolved IP until one connects.
+		for _, ip := range ips {
+			addr := net.JoinHostPort(ip.String(), port)
+			var conn *tls.Conn
+			conn, connectErr = DialSTARTTLS(addr, serverName, proto, timeout)
+			if connectErr != nil {
+				conn, connectErr = dialSTARTTLSInsecure(addr, serverName, proto, timeout)
+			}
+			if conn != nil {
+				sc = &stdConn{conn}
+				connectedAddr = addr
+				break
+			}
 		}
 	} else {
-		// Direct TLS — try stdlib first, fall back to uTLS on EOF
-		tlsConf := &tls.Config{
-			ServerName:         serverName,
-			InsecureSkipVerify: false,
-			NextProtos:         []string{"h2", "http/1.1"},
-		}
-		conn, err := dialTLS(addr, serverName, timeout, tlsConf)
-		if err != nil {
-			tlsConf.InsecureSkipVerify = true
-			conn, err = dialTLS(addr, serverName, timeout, tlsConf)
-		}
-		if err != nil && isEOFLike(err) {
-			// Server rejected Go's default ClientHello — retry with
-			// a Chrome-mimicking fingerprint via uTLS.
-			sc, connectErr = dialUTLS(addr, serverName, timeout, false)
-			if connectErr != nil {
-				sc, connectErr = dialUTLS(addr, serverName, timeout, true)
+		// Direct TLS — try each resolved IP, with uTLS fallback on EOF.
+		for _, ip := range ips {
+			addr := net.JoinHostPort(ip.String(), port)
+			sc, connectErr = dialWithFallback(addr, serverName, timeout, verbose)
+			if connectErr == nil {
+				connectedAddr = addr
+				break
 			}
-		} else if err != nil {
-			connectErr = err
-		} else {
-			sc = &stdConn{conn}
 		}
 	}
 
@@ -102,7 +103,7 @@ func Scan(target string, opts Options) SSLResult {
 	connState = &state
 
 	// Detect supported protocols
-	protocols := detectProtocols(connState, addr, serverName, proto, timeout)
+	protocols := detectProtocols(connState, connectedAddr, serverName, proto, timeout)
 
 	if len(connState.PeerCertificates) == 0 {
 		elapsed := int(time.Since(start).Milliseconds())
@@ -143,7 +144,7 @@ func Scan(target string, opts Options) SSLResult {
 	// Cipher enumeration
 	var ciphers []CipherInfo
 	if !opts.SkipCipherEnum {
-		ciphers = enumerateCiphers(addr, serverName, proto, timeout, opts.AllowPrivate)
+		ciphers = enumerateCiphers(connectedAddr, serverName, proto, timeout, opts.AllowPrivate)
 	}
 
 	// Full certificate chain
@@ -204,6 +205,47 @@ func dialTLS(addr, serverName string, timeout time.Duration, tlsConf *tls.Config
 	dialer := &net.Dialer{Timeout: timeout}
 	conn, err := tls.DialWithDialer(dialer, "tcp", addr, tlsConf)
 	return conn, err
+}
+
+// dialWithFallback tries stdlib TLS, then multiple uTLS fingerprints on EOF-like errors.
+func dialWithFallback(addr, serverName string, timeout time.Duration, verbose func(string)) (scanConn, error) {
+	tlsConf := &tls.Config{
+		ServerName:         serverName,
+		InsecureSkipVerify: false,
+		NextProtos:         []string{"h2", "http/1.1"},
+	}
+
+	if verbose != nil {
+		verbose(fmt.Sprintf("  stdlib TLS → %s (verify)", addr))
+	}
+	conn, err := dialTLS(addr, serverName, timeout, tlsConf)
+	if err != nil {
+		if verbose != nil {
+			verbose(fmt.Sprintf("  stdlib TLS verify failed: %v", err))
+			verbose(fmt.Sprintf("  stdlib TLS → %s (insecure)", addr))
+		}
+		tlsConf.InsecureSkipVerify = true
+		conn, err = dialTLS(addr, serverName, timeout, tlsConf)
+	}
+	if err != nil && isEOFLike(err) {
+		if verbose != nil {
+			verbose(fmt.Sprintf("  stdlib TLS insecure failed (EOF-like): %v", err))
+			verbose("  falling back to uTLS fingerprints...")
+		}
+		// Server rejected Go's default ClientHello — try browser fingerprints.
+		sc, uErr := dialUTLSWithFingerprints(addr, serverName, timeout, verbose)
+		return sc, uErr
+	}
+	if err != nil {
+		if verbose != nil {
+			verbose(fmt.Sprintf("  stdlib TLS failed (non-EOF): %v", err))
+		}
+		return nil, err
+	}
+	if verbose != nil {
+		verbose("  stdlib TLS connected ✓")
+	}
+	return &stdConn{conn}, nil
 }
 
 // detectProtocols determines which TLS versions the target supports.

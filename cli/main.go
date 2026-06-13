@@ -192,6 +192,7 @@ type config struct {
 	noPrivate  bool
 	quiet      bool
 	mx         bool
+	verbose    bool
 	port       int
 	timeout    string
 	startTLS   string
@@ -239,6 +240,8 @@ func parseArgs(args []string) (*config, error) {
 			cfg.noPrivate = true
 		case "--quiet", "-q":
 			cfg.quiet = true
+		case "--verbose", "-v":
+			cfg.verbose = true
 		case "--mx":
 			cfg.mx = true
 
@@ -352,6 +355,7 @@ func buildScanOpts(cfg *config) cmd.ScanOptions {
 		JSON:          cfg.jsonOut,
 		Table:         cfg.table,
 		GradeOnly:     cfg.gradeOnly,
+		Verbose:       cfg.verbose,
 		Version:       version,
 	}
 }
@@ -401,6 +405,7 @@ Scanning:
       --starttls <proto>              Force STARTTLS protocol (smtp/imap/pop3)
       --probe-only                    Skip enrichment (HSTS/DNS/compliance)
       --no-private                    Block private/reserved IPs
+  -v, --verbose                       Show connection diagnostics
       --mx                            Resolve MX records and scan mail servers
 
 Assertions:
