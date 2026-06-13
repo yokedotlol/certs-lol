@@ -180,6 +180,10 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
     return htmlResponse(aboutPage());
   }
 
+  if (path === '/cli') {
+    return htmlResponse(cliPage());
+  }
+
   // Favicon
   // OG image
   if (path === '/og.png' || path === '/og.svg') {
@@ -411,6 +415,7 @@ No authentication required. Rate limit: 60 requests/hour per IP. Results cached 
 
 ## Related
 
+- CLI: https://certs.lol/cli — same engine, runs locally
 - Full domain intelligence: https://yoke.lol
 - Source code: https://github.com/yokedotlol/certs-lol
 - Probe source: https://github.com/yokedotlol/yoke (fly-proxy/)
@@ -424,6 +429,7 @@ function sitemap(): string {
   <url><loc>https://certs.lol/api/docs</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://certs.lol/llms.txt</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://certs.lol/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://certs.lol/cli</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://certs.lol/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://certs.lol/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 </urlset>`;
@@ -666,6 +672,259 @@ ${metaTags('About', 'Fast, API-first TLS scanning. No accounts, no tracking, no 
 <h2>Built by</h2>
 <p>certs.lol is part of the <a href="https://yoke.lol">.lol</a> family. The TLS probe that powers certs.lol is the same one that feeds <a href="https://yoke.lol">yoke.lol</a>'s security analysis.</p>
 <p>Open source: <a href="https://github.com/yokedotlol/certs-lol">github.com/yokedotlol/certs-lol</a></p>
+
+<div class="footer-link"><a href="/">← back to certs.lol</a></div>
+</div></body></html>`;
+}
+
+function cliPage(): string {
+  return `<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CLI — certs.lol</title>
+${metaTags('CLI', 'certs CLI — fast, local TLS scanning. Same engine as certs.lol. No middleman. No rate limits.')}
+<style>${baseCSS()}
+.badge{display:inline-block;background:#1c1c24;border:1px solid #2a2a35;border-radius:4px;padding:2px 8px;font-size:12px;color:#9b8afb;margin-right:6px}
+table{border-collapse:collapse;width:100%;margin:0.75rem 0;font-size:13px}
+th{text-align:left;padding:6px 12px;border-bottom:2px solid #1c1c24;color:#9b8afb;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.05em}
+td{padding:6px 12px;border-bottom:1px solid #111116;color:#8e8e9a;vertical-align:top}
+td code{color:#38d9a9;font-size:12px}
+td:first-child{color:#d8d8e0;white-space:nowrap}
+.check{color:#38d9a9}
+.x{color:#5c5c6b}
+</style></head><body>
+<div class="page">
+<h1>certs CLI</h1>
+<p>Run locally without us. No middleman. No rate limits. Same engine as certs.lol.</p>
+<p><span class="badge">MIT</span><span class="badge">Go</span><span class="badge">&lt;5s scans</span></p>
+
+<h2>Install</h2>
+<pre><code># Homebrew
+brew install yokedotlol/tap/certs
+
+# Or download from GitHub Releases
+curl -sL https://github.com/yokedotlol/certs-lol/releases/latest/download/certs_darwin_arm64.tar.gz | tar xz
+sudo mv certs /usr/local/bin/</code></pre>
+
+<h2>Quick Start</h2>
+<pre><code># Scan a domain
+certs stripe.com
+
+# JSON output (default when piped)
+certs stripe.com | jq
+
+# Grade only
+certs stripe.com -g
+
+# CI gate — fail if below A
+certs api.prod.example.com --assert "min-grade A"
+
+# Compliance check
+certs payments.prod --profile pci
+
+# Scan internal hosts (private IPs allowed by default)
+certs internal-api.corp.local
+
+# Mail server TLS
+certs --mx example.com</code></pre>
+
+<h2>Three Modes</h2>
+<table>
+<tr><th>Mode</th><th>When</th><th>Use</th></tr>
+<tr><td>Pretty</td><td>TTY (default)</td><td>Human-readable, colored tree output</td></tr>
+<tr><td>JSON</td><td>Piped / <code>--json</code></td><td>Machine-readable, matches certs.lol API</td></tr>
+<tr><td>Assert</td><td><code>--assert</code></td><td>CI/CD gating with pass/fail reports</td></tr>
+</table>
+
+<h2>Assertion Rules</h2>
+<p>Compose multiple assertions to gate deploys. All must pass — any failure exits non-zero.</p>
+<pre><code>certs api.prod \\
+  --assert "min-grade A" \\
+  --assert "no-tls1.0" \\
+  --assert "cert-days 30" \\
+  --assert "no-insecure-ciphers"</code></pre>
+
+<h3>Grade</h3>
+<table>
+<tr><td><code>min-grade &lt;G&gt;</code></td><td>Grade must be ≥ threshold (A+, A, B, C, D, F)</td></tr>
+</table>
+
+<h3>Certificate</h3>
+<table>
+<tr><td><code>cert-days &lt;N&gt;</code></td><td>≥ N days until expiry</td></tr>
+<tr><td><code>cert-type &lt;type&gt;</code></td><td>Validation level (DV, OV, EV) — minimum match</td></tr>
+<tr><td><code>cert-key-min &lt;bits&gt;</code></td><td>Minimum key size in bits</td></tr>
+<tr><td><code>cert-key-type &lt;type&gt;</code></td><td>Key type (RSA, ECDSA, Ed25519)</td></tr>
+<tr><td><code>cert-san &lt;pattern&gt;</code></td><td>At least one SAN must match glob</td></tr>
+<tr><td><code>cert-issuer &lt;pattern&gt;</code></td><td>Issuer must contain string</td></tr>
+<tr><td><code>cert-chain-valid</code></td><td>Chain must be valid</td></tr>
+<tr><td><code>cert-has-scts</code></td><td>CT SCTs must be present</td></tr>
+</table>
+
+<h3>Protocol</h3>
+<table>
+<tr><td><code>min-tls &lt;ver&gt;</code></td><td>Minimum supported TLS version</td></tr>
+<tr><td><code>max-tls &lt;ver&gt;</code></td><td>Maximum supported TLS version</td></tr>
+<tr><td><code>no-tls1.0</code></td><td>TLS 1.0 must not be supported</td></tr>
+<tr><td><code>no-tls1.1</code></td><td>TLS 1.1 must not be supported</td></tr>
+<tr><td><code>has-tls1.3</code></td><td>TLS 1.3 must be supported</td></tr>
+<tr><td><code>has-pq</code></td><td>Post-quantum key exchange required</td></tr>
+<tr><td><code>has-ech</code></td><td>Encrypted Client Hello required</td></tr>
+</table>
+
+<h3>Ciphers</h3>
+<table>
+<tr><td><code>no-insecure-ciphers</code></td><td>Zero insecure ciphers (RC4, NULL, EXPORT, anon)</td></tr>
+<tr><td><code>no-weak-ciphers</code></td><td>Zero weak ciphers (3DES, CBC-no-FS, RSA-kex)</td></tr>
+<tr><td><code>max-weak-ciphers &lt;N&gt;</code></td><td>At most N weak ciphers</td></tr>
+<tr><td><code>min-strong-ciphers &lt;N&gt;</code></td><td>At least N strong ciphers</td></tr>
+<tr><td><code>has-forward-secrecy</code></td><td>At least one FS cipher present</td></tr>
+</table>
+
+<h3>Security &amp; DNS</h3>
+<table>
+<tr><td><code>has-hsts</code></td><td>HSTS header required</td></tr>
+<tr><td><code>hsts-min-age &lt;secs&gt;</code></td><td>HSTS max-age minimum</td></tr>
+<tr><td><code>has-hsts-preload</code></td><td>HSTS preload directive required</td></tr>
+<tr><td><code>has-dnssec</code></td><td>DNSSEC required</td></tr>
+<tr><td><code>has-caa</code></td><td>CAA records required</td></tr>
+<tr><td><code>has-ocsp-stapling</code></td><td>OCSP stapling required</td></tr>
+</table>
+
+<h3>Compliance</h3>
+<table>
+<tr><td><code>compliant-pci</code></td><td>PCI DSS 4.0 transport requirements</td></tr>
+<tr><td><code>compliant-nist</code></td><td>NIST SP 800-52r2 requirements</td></tr>
+<tr><td><code>compliant-hipaa</code></td><td>HIPAA transport requirements</td></tr>
+</table>
+
+<h3>Mail</h3>
+<table>
+<tr><td><code>has-starttls</code></td><td>Server must offer STARTTLS upgrade</td></tr>
+</table>
+
+<h2>Profiles</h2>
+<p>Named bundles for common use cases:</p>
+<pre><code># Production baseline
+certs api.prod --profile production
+
+# PCI DSS compliance
+certs payments.prod --profile pci
+
+# Maximum strictness
+certs cdn.prod --profile strict</code></pre>
+
+<table>
+<tr><th>Profile</th><th>Assertions</th></tr>
+<tr><td><code>production</code></td><td>min-grade A, no-tls1.0, no-tls1.1, no-insecure-ciphers, cert-days 14, has-hsts</td></tr>
+<tr><td><code>staging</code></td><td>min-grade B, no-insecure-ciphers, cert-days 7</td></tr>
+<tr><td><code>strict</code></td><td>min-grade A+, no-tls1.0/1.1, no-weak/insecure, has-tls1.3, has-pq, has-forward-secrecy, cert-days 30, has-hsts, has-hsts-preload, has-dnssec, cert-has-scts</td></tr>
+<tr><td><code>pci</code></td><td>compliant-pci, no-insecure/weak, has-tls1.3, cert-days 30, has-hsts</td></tr>
+<tr><td><code>nist</code></td><td>compliant-nist, has-tls1.3, no-tls1.0/1.1, cert-key-min 256</td></tr>
+<tr><td><code>hipaa</code></td><td>compliant-hipaa, cert-days 30, no-insecure-ciphers, has-hsts</td></tr>
+<tr><td><code>baseline</code></td><td>min-grade C, no-insecure-ciphers, cert-days 7, cert-chain-valid</td></tr>
+</table>
+
+<p>Profiles and <code>--assert</code> compose freely:</p>
+<pre><code>certs cdn.prod --profile production --assert "has-pq"</code></pre>
+
+<h2>Config File</h2>
+<p>Check a <code>.certs.yaml</code> into your repo for team-wide defaults:</p>
+<pre><code># .certs.yaml
+profile: production
+assertions:
+  - cert-type OV
+  - cert-issuer DigiCert
+  - has-pq
+  - hsts-min-age 63072000
+targets:
+  - api.example.com
+  - cdn.example.com
+  - payments.example.com</code></pre>
+<pre><code># Uses .certs.yaml from current directory
+certs
+
+# Or specify config
+certs --config path/to/.certs.yaml</code></pre>
+<p>Lookup order: <code>--config</code> flag → <code>.certs.yaml</code> in cwd → <code>~/.config/certs/config.yaml</code></p>
+
+<h2>Bulk Scanning</h2>
+<pre><code># Scan from file (auto-concurrent above 3 targets)
+certs --file domains.txt --out results/
+
+# With assertions
+certs --file production-domains.txt --profile production --out results/
+
+# Control concurrency
+certs --file domains.txt --workers 20 --quiet</code></pre>
+<p>Writes per-target JSON files and a <code>_summary.json</code> with aggregate results.</p>
+
+<h2>STARTTLS &amp; Mail</h2>
+<pre><code># Auto-detect from port
+certs mail.example.com --port 25       # SMTP STARTTLS
+certs mail.example.com --port 587      # SMTP STARTTLS
+certs mail.example.com --port 993      # IMAP implicit TLS
+
+# Explicit protocol
+certs mail.example.com --port 2525 --starttls smtp
+
+# MX lookup — resolve and scan all mail servers
+certs --mx example.com --assert "has-tls1.3"</code></pre>
+
+<h2>CI Examples</h2>
+
+<h3>GitHub Actions</h3>
+<pre><code>name: TLS Check
+on: [push]
+jobs:
+  tls:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install certs
+        run: |
+          curl -sL https://github.com/yokedotlol/certs-lol/releases/latest/download/certs_linux_amd64.tar.gz | tar xz
+          sudo mv certs /usr/local/bin/
+      - name: Check TLS
+        run: certs api.example.com --profile production</code></pre>
+
+<h3>GitLab CI</h3>
+<pre><code>tls-gate:
+  script:
+    - curl -sL https://github.com/yokedotlol/certs-lol/releases/latest/download/certs_linux_amd64.tar.gz | tar xz
+    - ./certs api.example.com --profile production
+  only:
+    - main</code></pre>
+
+<h2>Exit Codes</h2>
+<table>
+<tr><td><code>0</code></td><td>Scan succeeded, all assertions passed</td></tr>
+<tr><td><code>1</code></td><td>Scan succeeded, assertion(s) failed</td></tr>
+<tr><td><code>2</code></td><td>Usage error (bad flags, invalid assertion)</td></tr>
+<tr><td><code>3</code></td><td>Scan/connection error</td></tr>
+</table>
+
+<h2>Flags</h2>
+<table>
+<tr><th>Flag</th><th>Short</th><th>Default</th><th>Description</th></tr>
+<tr><td><code>--json</code></td><td><code>-j</code></td><td>auto</td><td>Force JSON output</td></tr>
+<tr><td><code>--table</code></td><td><code>-t</code></td><td>auto</td><td>Force pretty output</td></tr>
+<tr><td><code>--grade</code></td><td><code>-g</code></td><td>—</td><td>Print only the letter grade</td></tr>
+<tr><td><code>--assert</code></td><td><code>-a</code></td><td>—</td><td>Assertion rule (repeatable)</td></tr>
+<tr><td><code>--profile</code></td><td><code>-P</code></td><td>—</td><td>Named assertion profile</td></tr>
+<tr><td><code>--config</code></td><td><code>-c</code></td><td>.certs.yaml</td><td>Config file path</td></tr>
+<tr><td><code>--port</code></td><td><code>-p</code></td><td>443</td><td>Target port</td></tr>
+<tr><td><code>--timeout</code></td><td>—</td><td>15s</td><td>Connection timeout</td></tr>
+<tr><td><code>--starttls</code></td><td>—</td><td>—</td><td>Force STARTTLS protocol</td></tr>
+<tr><td><code>--probe-only</code></td><td>—</td><td>false</td><td>Skip enrichment</td></tr>
+<tr><td><code>--no-private</code></td><td>—</td><td>false</td><td>Block private/reserved IPs</td></tr>
+<tr><td><code>--mx</code></td><td>—</td><td>—</td><td>Resolve MX and scan mail servers</td></tr>
+<tr><td><code>--file</code></td><td><code>-f</code></td><td>—</td><td>Read targets from file</td></tr>
+<tr><td><code>--out</code></td><td><code>-o</code></td><td>—</td><td>Write results to directory</td></tr>
+<tr><td><code>--workers</code></td><td><code>-w</code></td><td>10</td><td>Concurrent workers (bulk)</td></tr>
+<tr><td><code>--quiet</code></td><td><code>-q</code></td><td>false</td><td>Suppress progress</td></tr>
+</table>
+
+<h2>Source</h2>
+<p><a href="https://github.com/yokedotlol/certs-lol">github.com/yokedotlol/certs-lol</a> — MIT licensed.</p>
 
 <div class="footer-link"><a href="/">← back to certs.lol</a></div>
 </div></body></html>`;

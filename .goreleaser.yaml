@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: certs
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: certs
+    dir: .
+    main: ./cli/
+    binary: certs
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.ShortCommit}}
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+
+brews:
+  - name: certs
+    repository:
+      owner: yokedotlol
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: "https://certs.lol"
+    description: "Fast, local TLS scanning. Same engine as certs.lol."
+    license: "MIT"
+    install: |
+      bin.install "certs"
+    test: |
+      assert_match "certs", shell_output("#{bin}/certs version")
+
+release:
+  github:
+    owner: yokedotlol
+    name: certs-lol
+  prerelease: auto
+  name_template: "v{{.Version}}"
