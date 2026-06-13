@@ -161,7 +161,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font
 <nav class="input-wrap" aria-label="Domain scan">
   <form action="/" method="get" id="scanForm" role="search">
   <span class="p" aria-hidden="true">$</span>
-  <span class="cm" aria-hidden="true">curl</span><span class="dm" aria-hidden="true"> -s </span><span class="dm hide-m" aria-hidden="true">https://certs.lol/</span><span class="dm show-m" aria-hidden="true">certs.lol/</span><label for="scanInput" class="sr-only">Domain or IP to scan</label><input class="di" id="scanInput" type="text" name="q" value="${esc(targetVal)}" placeholder="domain or IP" spellcheck="false" autocomplete="off" autofocus><span class="dm" aria-hidden="true"> | jq</span><span class="cur" aria-hidden="true"></span>
+  <span class="cm" aria-hidden="true">curl</span><span class="dm" aria-hidden="true">&nbsp;-s&nbsp;</span><span class="dm" aria-hidden="true">https://certs.lol/</span><label for="scanInput" class="sr-only">Domain or IP to scan</label><input class="di" id="scanInput" type="text" name="q" value="${esc(targetVal)}" placeholder="domain or IP" spellcheck="false" autocomplete="off" autofocus><span class="dm" aria-hidden="true"> | jq</span><span class="cur" aria-hidden="true"></span>
   </form>
 </nav>
 
