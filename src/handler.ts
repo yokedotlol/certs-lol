@@ -201,6 +201,7 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
   }
 
   const clientIP = getClientIP(request);
+  const forceRescan = url.searchParams.has('force');
 
   // Rate limit check — every request counts (cache hit or miss)
   const rl = await checkRateLimit(clientIP, env);
@@ -218,9 +219,9 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
     return htmlResponse(html(undefined, 'Rate limit exceeded. Try again in ' + rl.retryAfter + 's.'), 429);
   }
 
-  // Check cache
+  // Check cache (skip on ?force)
   const cacheKey = `scan:${target.toLowerCase()}`;
-  const cached = await env.CACHE.get(cacheKey, 'json') as ScanResult | null;
+  const cached = forceRescan ? null : await env.CACHE.get(cacheKey, 'json') as ScanResult | null;
 
   if (cached) {
     const result = { ...cached, _meta: { ...cached._meta, cache_hit: true } };
@@ -389,7 +390,7 @@ Scan a domain: GET https://certs.lol/{domain}
 Scan an IP: GET https://certs.lol/{ip}
 API docs: https://certs.lol/api/docs
 
-No authentication required. Rate limit: 20 scans/hour per IP. Results cached for 6h.
+No authentication required. Rate limit: 20 scans/hour per IP. Results cached for 6h. Add ?force to bypass cache.
 
 ## What it checks
 
@@ -442,6 +443,11 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
 <pre><code>$ curl -s https://certs.lol/stripe.com | jq '.grade'
 "A+"</code></pre>
 
+<h3>GET /{domain}?force</h3>
+<p>Bypass cache and force a fresh scan. Still counts against rate limit.</p>
+<pre><code>$ curl -s "https://certs.lol/stripe.com?force" | jq '.grade'
+"A+"</code></pre>
+
 <h3>GET /{ip}</h3>
 <p>Scan a specific IP address. DNS-dependent fields (CAA, DANE, DNSSEC, multi-IP) are omitted.</p>
 <pre><code>$ curl -s https://certs.lol/1.1.1.1 | jq '.certificate.subject'
@@ -461,7 +467,7 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
 <h2>Rate Limiting</h2>
 <ul>
 <li>20 scans per hour per IP</li>
-<li>Results cached for 6h</li>
+<li>Results cached for 6h — add <code>?force</code> to bypass</li>
 <li>429 response with <code>Retry-After</code> header when exceeded</li>
 </ul>
 

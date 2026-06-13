@@ -115,6 +115,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font
 .cipher-grid .c.insecure{background:rgba(248,113,113,0.06);color:var(--err)}
 .cipher-grid .c.weak{background:rgba(251,191,36,0.06);color:var(--warn)}
 
+.cache-tag{background:var(--accent-dim);color:var(--info);padding:1px 5px;border-radius:3px;font-size:10px;text-transform:uppercase;letter-spacing:0.05em}
+.rescan-btn{color:var(--dim);text-decoration:none;font-size:11px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;transition:all .2s}
+.rescan-btn:hover{color:var(--accent);border-color:var(--accent);text-decoration:none}
+
 .hook{margin-top:2.25rem;padding:14px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:10px;font-family:var(--mono);font-size:12px}
 .hook .ar{color:var(--accent);font-size:14px}
 .hook .q{color:var(--muted)}
@@ -210,7 +214,9 @@ function renderEmpty(): string {
 
 function renderResult(d: ScanResult, hook: string[], isIP: boolean, rateLimit?: RateLimitInfo): string {
   const gradeClass = d.grade === 'A+' ? 'A-plus' : d.grade.charAt(0);
-  const cached = d._meta?.cache_hit ? ' · cached' : '';
+  const cached = d._meta?.cache_hit ? ' · <span class="cache-tag" title="Cached result">cached</span>' : '';
+  const scannedAt = d.scanned_at ? timeAgo(d.scanned_at) : '';
+  const rescanBtn = `<a href="/${esc(d.target)}?force" class="rescan-btn" title="Force fresh scan">↻ rescan</a>`;
 
   // Parse subject CN
   const subjectCN = d.subject.replace(/^CN=/, '');
@@ -239,7 +245,7 @@ function renderResult(d: ScanResult, hook: string[], isIP: boolean, rateLimit?: 
   <div class="grade-letter grade-${gradeClass}" aria-label="Grade ${esc(d.grade)}">${esc(d.grade)}</div>
   <div>
     <h1 class="grade-domain">${esc(d.target)}</h1>
-    <div class="grade-meta">${d.probe_ms}ms${cached}</div>
+    <div class="grade-meta">${d.probe_ms}ms${cached}${scannedAt ? ` · ${scannedAt}` : ''} ${rescanBtn}</div>
   </div>
 </div>
 <div class="trust-strip"><span>✓</span> no key · no accounts · no tracking · &lt; 5s · api-first</div>`;
@@ -399,6 +405,15 @@ function formatDate(iso: string): string {
   if (!iso) return '—';
   const d = new Date(iso);
   return d.toISOString().slice(0, 10);
+}
+
+function timeAgo(iso: string): string {
+  if (!iso) return '';
+  const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (secs < 60) return 'just now';
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
+  return `${Math.floor(secs / 86400)}d ago`;
 }
 
 function section(label: string, rows: string[]): string {
