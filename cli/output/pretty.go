@@ -4,6 +4,7 @@ package output
 import (
 	"fmt"
 	"io"
+	"net"
 	"strings"
 
 	"github.com/yokedotlol/certs-lol/enrich"
@@ -221,9 +222,19 @@ func Pretty(w io.Writer, target string, result probe.SSLResult, enrichResult *en
 		}
 	}
 
-	// Footer — only show full report link for standard HTTPS targets
+	// Footer — show shareable report link for public HTTPS domains only
 	if !strings.Contains(target, ":") || strings.HasSuffix(target, ":443") {
-		fmt.Fprintf(w, "\n  → Full report: https://certs.lol/%s\n\n", target)
+		host := target
+		if idx := strings.LastIndex(host, ":"); idx != -1 {
+			host = host[:idx]
+		}
+		// Skip for IP addresses and private/internal hosts
+		ip := net.ParseIP(host)
+		if ip == nil && !strings.HasSuffix(host, ".local") && !strings.HasSuffix(host, ".internal") && !strings.HasSuffix(host, ".localhost") {
+			fmt.Fprintf(w, "\n  → Shareable report: https://certs.lol/%s\n\n", target)
+		} else {
+			fmt.Fprintln(w)
+		}
 	} else {
 		fmt.Fprintln(w)
 	}
