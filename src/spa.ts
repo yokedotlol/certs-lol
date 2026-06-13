@@ -28,9 +28,13 @@ export function html(data?: ScanResult, error?: string): string {
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://certs.lol${data ? '/' + esc(data.target) : ''}">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://certs.lol/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(desc)}">
+<meta name="twitter:image" content="https://certs.lol/og.png">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="canonical" href="https://certs.lol${data ? '/' + esc(data.target) : ''}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
