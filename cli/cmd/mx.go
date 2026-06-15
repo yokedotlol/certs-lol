@@ -63,6 +63,39 @@ func RunMXScan(w io.Writer, domains []string, opts ScanOptions) int {
 			result.Probe.MXHost = host
 			result.Probe.MXPriority = int(mx.Pref)
 
+			// If port 25 failed with a connection error, try 587 fallback
+			if result.Probe.Error != nil && mxOpts.Port == 25 && isPort25Blocked(*result.Probe.Error) {
+				if isTerminal() && !mxOpts.JSON && !mxOpts.GradeOnly {
+					fmt.Fprintf(w, "  %s⚠ Port 25 appears blocked (%s) — trying port 587%s\n",
+						"\033[33m", summarizeConnError(*result.Probe.Error), "\033[0m")
+				}
+
+				fallbackOpts := mxOpts
+				fallbackOpts.Port = 587
+				fallbackOpts.StartTLSProto = "smtp"
+				fallbackResult := scanTarget(host, fallbackOpts)
+				fallbackResult.Probe.MXHost = host
+				fallbackResult.Probe.MXPriority = int(mx.Pref)
+
+				if fallbackResult.Probe.Error == nil {
+					result = fallbackResult
+					result.Probe.FallbackPort = 587
+					if isTerminal() && !mxOpts.JSON && !mxOpts.GradeOnly {
+						fmt.Fprintf(w, "  %s✓ Connected via port 587 (submission)%s\n\n",
+							"\033[32m", "\033[0m")
+					}
+				} else {
+					// Both failed — show hint
+					if isTerminal() && !mxOpts.JSON && !mxOpts.GradeOnly {
+						fmt.Fprintf(w, "  %s✗ Port 587 also failed%s\n", "\033[31m", "\033[0m")
+						fmt.Fprintf(w, "  %sHint: Port 25 is blocked by most ISPs and cloud providers.%s\n",
+							"\033[33m", "\033[0m")
+						fmt.Fprintf(w, "  %sTry: certs %s --port 587 --starttls smtp%s\n\n",
+							"\033[33m", host, "\033[0m")
+					}
+				}
+			}
+
 			if result.Probe.Error != nil {
 				exitCode = maxCode(exitCode, 3)
 			}
@@ -76,7 +109,11 @@ func RunMXScan(w io.Writer, domains []string, opts ScanOptions) int {
 				}
 			}
 
-			label := fmt.Sprintf("%s:%d", host, mxOpts.Port)
+			displayPort := mxOpts.Port
+			if result.Probe.FallbackPort > 0 {
+				displayPort = result.Probe.FallbackPort
+			}
+			label := fmt.Sprintf("%s:%d", host, displayPort)
 
 			if mxOpts.GradeOnly {
 				output.GradeOnly(w, label, result.Probe.Grade)
@@ -91,4 +128,32 @@ func RunMXScan(w io.Writer, domains []string, opts ScanOptions) int {
 	}
 
 	return exitCode
+}
+
+// isPort25Blocked returns true if the error looks like an outbound port 25 block
+// (connection timeout, refused, or network unreachable — not a TLS/protocol error).
+func isPort25Blocked(errStr string) bool {
+	lower := strings.ToLower(errStr)
+	return strings.Contains(lower, "i/o timeout") ||
+		strings.Contains(lower, "connection refused") ||
+		strings.Contains(lower, "connection timed out") ||
+		strings.Contains(lower, "network is unreachable") ||
+		strings.Contains(lower, "no route to host") ||
+		strings.Contains(lower, "operation timed out") ||
+		strings.Contains(lower, "context deadline exceeded")
+}
+
+// summarizeConnError returns a short human-readable label for the connection error.
+func summarizeConnError(errStr string) string {
+	lower := strings.ToLower(errStr)
+	if strings.Contains(lower, "refused") {
+		return "refused"
+	}
+	if strings.Contains(lower, "unreachable") || strings.Contains(lower, "no route") {
+		return "unreachable"
+	}
+	if strings.Contains(lower, "timeout") || strings.Contains(lower, "timed out") || strings.Contains(lower, "deadline") {
+		return "timeout"
+	}
+	return "connection failed"
 }

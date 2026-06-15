@@ -44,6 +44,9 @@ type SSLResult struct {
 	// STARTTLS fields
 	StartTLS      bool   `json:"starttls"`
 	StartTLSProto string `json:"starttls_proto,omitempty"`
+
+	// FallbackPort is set when --mx fell back from port 25 to another port.
+	FallbackPort int `json:"fallback_port,omitempty"`
 	MXHost        string `json:"mx_host,omitempty"`
 	MXPriority    int    `json:"mx_priority,omitempty"`
 }
