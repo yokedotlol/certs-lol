@@ -387,7 +387,7 @@ function faviconSvg(): string {
 }
 
 function securityTxt(): string {
-  return `Contact: mailto:hello@certs.lol
+  return `Contact: https://github.com/yokedotlol/certs-lol/issues
 Expires: 2027-06-12T00:00:00.000Z
 Preferred-Languages: en
 Canonical: https://certs.lol/.well-known/security.txt
