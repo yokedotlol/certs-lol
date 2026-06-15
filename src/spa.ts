@@ -85,7 +85,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 .input-wrap{margin-top:2rem;border-bottom:2px solid var(--accent);padding-bottom:10px;font-family:var(--font-mono);font-size:14px;display:flex;align-items:center;transition:border-color .25s}
 .input-wrap form{display:contents}
 .p{color:var(--accent);font-weight:600;margin-right:10px}
-.cm{color:var(--text)}.dm{color:var(--dim)}
+.cm{color:var(--accent);font-weight:600}.dm{color:var(--dim)}
 .di{background:none;border:none;color:var(--text);font-family:var(--font-mono);font-size:14px;outline:none;flex:1;min-width:80px;caret-color:var(--accent)}
 .di::placeholder{color:var(--faint)}
 .cur{display:inline-block;width:7px;height:14px;background:var(--accent);animation:b 1.1s step-end infinite;vertical-align:text-bottom;margin-left:1px}
@@ -175,7 +175,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 <nav class="input-wrap" aria-label="Domain scan">
   <form action="/" method="get" id="scanForm" role="search">
   <span class="p" aria-hidden="true">$</span>
-  <span class="cm" aria-hidden="true">curl</span><span class="dm" aria-hidden="true">&nbsp;-s&nbsp;</span><span class="dm" aria-hidden="true">https://certs.lol/</span><label for="scanInput" class="sr-only">Domain or IP to scan</label><input class="di" id="scanInput" type="text" name="q" value="${esc(targetVal)}" placeholder="domain or IP" spellcheck="false" autocomplete="off" autofocus><span class="dm" aria-hidden="true"> | jq</span><span class="cur" aria-hidden="true"></span>
+  <span class="cm" aria-hidden="true">$</span><span class="dm" aria-hidden="true">&nbsp;certs&nbsp;▸&nbsp;</span><label for="scanInput" class="sr-only">Domain or IP to scan</label><input class="di" id="scanInput" type="text" name="q" value="${esc(targetVal)}" placeholder="domain or IP" spellcheck="false" autocomplete="off" autofocus><span class="dm" aria-hidden="true"> | jq</span><span class="cur" aria-hidden="true"></span>
   </form>
 </nav>
 
