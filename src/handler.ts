@@ -19,6 +19,7 @@ function rateLimitMessage(retryMin: number, target: string): string {
 const SECURITY_HEADERS: Record<string, string> = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '0',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data: https://yoke.lol; frame-ancestors 'none'; base-uri 'self'",
@@ -87,7 +88,7 @@ function jsonResponse(data: unknown, status = 200, extra?: Record<string, string
   return addHeaders(
     new Response(JSON.stringify(data, null, 2) + '\n', {
       status,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Vary': 'Accept, Accept-Encoding' },
     }),
     extra,
   );
@@ -99,8 +100,8 @@ function htmlResponse(body: string, status = 200): Response {
       status,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'public, max-age=300, s-maxage=600',
-        'Vary': 'Accept',
+        'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=300',
+        'Vary': 'Accept, Accept-Encoding',
       },
     }),
   );
