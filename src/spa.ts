@@ -62,7 +62,7 @@ export function html(data?: ScanResult, error?: string, rl?: RateLimitInfo, nonc
 body[data-theme="dark"]{
   --bg:#0a0a12;--surface:#12121a;--surface-raised:#1a1a24;--surface-hover:#22222e;--border:#1e1e2a;--border-muted:#16161f;
   --text:#e0e0ea;--text-secondary:#a8a8b8;--muted:#7a7a8e;--dim:#55556a;--faint:#3a3a4a;
-  --accent:#9b8afb;--accent-dim:rgba(155,138,251,0.08);--accent-subtle:rgba(155,138,251,0.08);
+  --accent:#9b8afb;--accent-fg:#0a0a12;--accent-dim:rgba(155,138,251,0.08);--accent-subtle:rgba(155,138,251,0.08);
   --ok:#3fb950;--ok-subtle:rgba(63,185,80,0.08);
   --info:#6ea8fe;--warn:#e5a820;--warn-subtle:rgba(229,168,32,0.08);--err:#f85149;--err-subtle:rgba(248,81,73,0.08);
   --purple:#bc8cff;
@@ -70,7 +70,7 @@ body[data-theme="dark"]{
 body[data-theme="light"]{
   --bg:#fafafe;--surface:#f0f0f5;--surface-raised:#e8e8ef;--surface-hover:#dddde6;--border:#d0d0dc;--border-muted:#e0e0ea;
   --text:#1a1a2e;--text-secondary:#4a4a60;--muted:#6a6a80;--dim:#9090a4;--faint:#b8b8c8;
-  --accent:#7c3aed;--accent-dim:rgba(124,58,237,0.06);--accent-subtle:rgba(124,58,237,0.06);
+  --accent:#7c3aed;--accent-fg:#ffffff;--accent-dim:rgba(124,58,237,0.06);--accent-subtle:rgba(124,58,237,0.06);
   --ok:#16a34a;--ok-subtle:rgba(22,163,74,0.06);
   --info:#2563eb;--warn:#b58900;--warn-subtle:rgba(181,137,0,0.06);--err:#dc2626;--err-subtle:rgba(220,38,38,0.06);
   --purple:#8250df;
@@ -81,7 +81,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 
 .hdr{padding:2rem 0 0;display:flex;align-items:baseline;gap:16px}
 .logo{font-size:1.5rem;font-weight:800;letter-spacing:-0.04em;text-decoration:none;color:var(--text)}
-.logo .t{color:var(--accent)}
+.logo span{color:var(--accent)}
 .tag{font-size:11px;color:var(--dim);font-family:var(--font-mono)}
 
 .theme-toggle{position:fixed;top:16px;right:16px;background:var(--surface);color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-family:var(--font-mono);font-size:11px;z-index:100;transition:all .2s}
@@ -190,7 +190,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 
 <div class="page">
 <header class="hdr">
-  <a class="logo" href="/" aria-label="certs.lol home">certs<span class="t">.lol</span></a>
+  <a class="logo" href="/" aria-label="certs.lol home">certs<span>.lol</span></a>
   <div class="tag">fast, API-first TLS scanning</div>
 </header>
 
