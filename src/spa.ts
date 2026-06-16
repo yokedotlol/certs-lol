@@ -174,7 +174,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 
 <nav class="input-wrap" aria-label="Domain scan">
   <form action="/" method="get" id="scanForm" role="search">
-  <span class="p" aria-hidden="true">$</span>
   <span class="cm" aria-hidden="true">$</span><span class="dm" aria-hidden="true">&nbsp;certs&nbsp;▸&nbsp;</span><label for="scanInput" class="sr-only">Domain or IP to scan</label><input class="di" id="scanInput" type="text" name="q" value="${esc(targetVal)}" placeholder="domain or IP" spellcheck="false" autocomplete="off" autofocus><span class="dm" aria-hidden="true"> | jq</span><span class="cur" aria-hidden="true"></span>
   </form>
 </nav>
