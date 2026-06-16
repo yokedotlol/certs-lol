@@ -131,6 +131,17 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
     return jsonResponse({ error: 'Method not allowed' }, 405);
   }
 
+  // MTA-STS policy file (served from mta-sts.certs.lol)
+  if (url.hostname === 'mta-sts.certs.lol' && path === '/.well-known/mta-sts.txt') {
+    return new Response(
+      'version: STSv1\nmode: enforce\nmx: route1.mx.cloudflare.net\nmx: route2.mx.cloudflare.net\nmx: route3.mx.cloudflare.net\nmax_age: 604800\n',
+      { headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'public, max-age=86400' } },
+    );
+  }
+  if (url.hostname === 'mta-sts.certs.lol') {
+    return new Response('Not found', { status: 404 });
+  }
+
   // Health endpoint — not rate limited
   if (path === '/health') {
     return jsonResponse({ status: 'ok', service: 'certs.lol' });

@@ -58,7 +58,7 @@ export function html(data?: ScanResult, error?: string, rl?: RateLimitInfo, nonc
   })}</script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-:root{--font-mono:'JetBrains Mono',monospace;--font-sans:'Inter',system-ui,sans-serif}
+:root{--font-mono:'JetBrains Mono',ui-monospace,'Cascadia Code','Source Code Pro',Menlo,Consolas,monospace;--font-sans:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--radius:8px;--radius-sm:6px}
 body[data-theme="dark"]{
   --bg:#0a0a12;--surface:#12121a;--surface-raised:#1a1a24;--surface-hover:#22222e;--border:#1e1e2a;--border-muted:#16161f;
   --text:#e0e0ea;--text-secondary:#a8a8b8;--muted:#7a7a8e;--dim:#55556a;--faint:#3a3a4a;
@@ -76,19 +76,18 @@ body[data-theme="light"]{
   --purple:#8250df;
 }
 html{background:var(--bg)}
-body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;line-height:1.6;transition:background .25s,color .25s}
 .page{max-width:640px;margin:0 auto;padding:0 1.5rem}
 
-.hdr{padding:3.5rem 0 0;display:flex;align-items:baseline;gap:16px}
+.hdr{padding:2rem 0 0;display:flex;align-items:baseline;gap:16px}
 .logo{font-size:1.5rem;font-weight:800;letter-spacing:-0.04em;text-decoration:none;color:var(--text)}
 .logo .t{color:var(--accent)}
 .tag{font-size:11px;color:var(--dim);font-family:var(--font-mono)}
-.tag em{color:var(--muted);font-style:normal}
 
 .theme-toggle{position:fixed;top:16px;right:16px;background:var(--surface);color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-family:var(--font-mono);font-size:11px;z-index:100;transition:all .2s}
 .theme-toggle:hover{color:var(--text);border-color:var(--accent)}
 
-.input-wrap{margin-top:2rem;border-bottom:2px solid var(--accent);padding-bottom:10px;font-family:var(--font-mono);font-size:14px;display:flex;align-items:center;transition:border-color .25s}
+.input-wrap{margin-top:2rem;border-bottom:2px solid var(--accent);padding-bottom:10px;font-family:var(--font-mono);font-size:14px;display:flex;align-items:center;transition:border-color .25s;outline:none}
 .input-wrap form{display:contents}
 .p{color:var(--accent);font-weight:600;margin-right:10px}
 .cm{color:var(--accent);font-weight:600}.dm{color:var(--dim)}
@@ -136,20 +135,26 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 .hook a{color:var(--accent);text-decoration:none;font-weight:500}
 .hook a:hover{text-decoration:underline}
 
-.footer{padding:2rem 0 3rem;margin-top:0.5rem;font-size:10px;color:var(--faint);font-family:var(--font-mono);text-align:center}
+.footer{padding:2rem 0 3rem;margin-top:2rem;font-size:10px;color:var(--faint);font-family:var(--font-mono);text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.footer a{color:var(--dim);text-decoration:none;transition:color .2s}
+.footer a:hover{color:var(--muted);text-decoration:none}
 .footer-links{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
 .footer-links a{color:var(--dim);text-decoration:none}
 .footer-links a:hover{color:var(--muted)}
-.footer-family{margin-top:8px;display:flex;justify-content:center;gap:16px}
+.footer-family{display:flex;justify-content:center;gap:16px}
 .footer-family a{color:var(--faint);text-decoration:none;transition:color .2s}
 .footer-family a:hover{color:var(--accent)}
-.yoke-badge{display:inline-block;margin-top:10px}
+.yoke-badge{display:inline-block}
 .yoke-badge img{opacity:0.6;transition:opacity .2s;vertical-align:middle}
 .yoke-badge:hover img{opacity:1}
 
+.examples{display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.examples a{padding:6px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:var(--font-mono);font-size:0.82rem;color:var(--accent);text-decoration:none;transition:background .2s}
+.examples a:hover{background:var(--surface-raised);text-decoration:none}
 
-.skip-nav{position:absolute;left:-9999px;top:0;z-index:200;padding:8px 16px;background:var(--accent);color:#fff;font-family:var(--font-mono);font-size:12px;text-decoration:none;border-radius:0 0 4px 0}
+.skip-nav{position:absolute;left:-9999px;top:0;z-index:200;padding:8px 16px;background:var(--accent);color:var(--accent-fg,#fff);font-family:var(--font-mono);font-size:12px;text-decoration:none;border-radius:0 0 6px 0}
 .skip-nav:focus{left:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 .show-m{display:none}
@@ -180,12 +185,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 <body data-theme="dark">
 
 <a href="#main" class="skip-nav">Skip to content</a>
-<button class="theme-toggle" id="themeBtn" aria-label="Toggle color theme">☀ light</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
 
 <div class="page">
 <header class="hdr">
   <a class="logo" href="/" aria-label="certs.lol home">certs<span class="t">.lol</span></a>
-  <div class="tag"><em>fast</em>, API-first TLS scanning.</div>
+  <div class="tag">fast, API-first TLS scanning</div>
 </header>
 
 <nav class="input-wrap" aria-label="Domain scan">
@@ -209,13 +214,13 @@ ${data ? renderResult(data, randomHook, isIP) : (error ? '' : renderEmpty())}
 </div>
 
 <script${nonceAttr}>
-const body=document.body,btn=document.getElementById('themeBtn');
+const body=document.body,btn=document.getElementById('themeToggle');
 const saved=localStorage.getItem('certs-theme');
-if(saved){body.dataset.theme=saved;btn.textContent=saved==='light'?'● dark':'☀ light'}
+if(saved){body.dataset.theme=saved;btn.textContent=saved==='light'?'🌙':'☀️'}
 btn.addEventListener('click',()=>{
   const isDark=body.dataset.theme==='dark';
   body.dataset.theme=isDark?'light':'dark';
-  btn.textContent=isDark?'● dark':'☀ light';
+  btn.textContent=isDark?'🌙':'☀️';
   localStorage.setItem('certs-theme',body.dataset.theme);
 });
 document.getElementById('scanForm').addEventListener('submit',(e)=>{
@@ -261,9 +266,11 @@ ${rl ? `<div class="rl-pill" id="rlPill" data-remaining="${rl.remaining}" data-l
 function renderEmpty(): string {
   return `
 <div style="margin-top:3rem;text-align:center">
-  <p style="color:var(--muted);font-family:var(--font-mono);font-size:13px">enter a domain or IP to scan</p>
-  <div style="margin-top:1.5rem;font-size:12px;color:var(--dim);font-family:var(--font-mono)">
-    <span style="color:var(--ok)">✓</span> no api key · no accounts · no tracking · &lt; 5s · api-first
+  <p style="color:var(--dim);font-family:var(--font-mono);font-size:12px"><code>curl -s https://certs.lol/stripe.com | jq</code></p>
+  <div class="examples">
+    <a href="/stripe.com">stripe.com</a>
+    <a href="/github.com">github.com</a>
+    <a href="/cloudflare.com">cloudflare.com</a>
   </div>
 </div>`;
 }
