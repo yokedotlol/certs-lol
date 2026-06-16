@@ -60,7 +60,7 @@ export function html(data?: ScanResult, error?: string, rl?: RateLimitInfo, nonc
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{--font-mono:'JetBrains Mono',ui-monospace,'Cascadia Code','Source Code Pro',Menlo,Consolas,monospace;--font-sans:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--radius:8px;--radius-sm:6px}
 body[data-theme="dark"]{
-  --bg:#0a0a12;--surface:#12121a;--surface-raised:#1a1a24;--surface-hover:#22222e;--border:#1e1e2a;--border-muted:#16161f;
+  --bg:#0a0a12;--surface:#15151f;--surface-raised:#1e1e2a;--surface-hover:#26263a;--border:#2a2a3a;--border-muted:#1e1e2a;
   --text:#e0e0ea;--text-secondary:#a8a8b8;--muted:#7a7a8e;--dim:#55556a;--faint:#3a3a4a;
   --accent:#9b8afb;--accent-fg:#0a0a12;--accent-dim:rgba(155,138,251,0.08);--accent-subtle:rgba(155,138,251,0.08);
   --ok:#3fb950;--ok-subtle:rgba(63,185,80,0.08);
@@ -84,8 +84,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 .logo span{color:var(--accent)}
 .tag{font-size:11px;color:var(--dim);font-family:var(--font-mono)}
 
-.theme-toggle{position:fixed;top:16px;right:16px;background:var(--surface);color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-family:var(--font-mono);font-size:11px;z-index:100;transition:all .2s}
-.theme-toggle:hover{color:var(--text);border-color:var(--accent)}
+.theme-toggle{position:fixed;top:16px;right:16px;z-index:100;display:flex;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);background:var(--surface);font-family:var(--font-mono);font-size:11px}
+.theme-opt{padding:5px 10px;cursor:pointer;border:none;background:none;color:var(--dim);transition:all .15s;white-space:nowrap}
+.theme-opt.active{background:var(--accent);color:var(--accent-fg);font-weight:600}
+.theme-opt:not(.active):hover{color:var(--text)}
 
 .input-wrap{margin-top:2rem;border-bottom:2px solid var(--accent);padding-bottom:10px;font-family:var(--font-mono);font-size:14px;display:flex;align-items:center;transition:border-color .25s;outline:none}
 .input-wrap form{display:contents}
@@ -186,7 +188,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 <body data-theme="dark">
 
 <a href="#main" class="skip-nav">Skip to content</a>
-<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+<div class="theme-toggle" role="radiogroup" aria-label="Theme">
+  <button class="theme-opt active" role="radio" aria-checked="true" data-theme="dark">Dark</button>
+  <button class="theme-opt" role="radio" aria-checked="false" data-theme="light">Light</button>
+</div>
 
 <div class="page">
 <header class="hdr">
@@ -196,7 +201,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 
 <nav class="input-wrap" aria-label="Domain scan">
   <form action="/" method="get" id="scanForm" role="search">
-  <span class="cm" aria-hidden="true">$</span><span class="dm" aria-hidden="true">&nbsp;certs&nbsp;▸&nbsp;</span><label for="scanInput" class="sr-only">Domain or IP to scan</label><input class="di" id="scanInput" type="text" name="q" value="${esc(targetVal)}" placeholder="domain or IP" spellcheck="false" autocomplete="off" autofocus><span class="dm" aria-hidden="true"> | jq</span><span class="cur" aria-hidden="true"></span>
+  <span class="cm" aria-hidden="true">$</span><span class="dm" aria-hidden="true">&nbsp;certs&nbsp;▸&nbsp;</span><label for="scanInput" class="sr-only">Domain or IP to scan</label><input class="di" id="scanInput" type="text" name="q" value="${esc(targetVal)}" placeholder="domain or IP" spellcheck="false" autocomplete="off" autofocus><span class="cur" aria-hidden="true"></span>
   </form>
 </nav>
 
@@ -215,14 +220,20 @@ ${data ? renderResult(data, randomHook, isIP) : (error ? '' : renderEmpty())}
 </div>
 
 <script${nonceAttr}>
-const body=document.body,btn=document.getElementById('themeToggle');
+const body=document.body;
+const toggleBtns=document.querySelectorAll('.theme-opt');
 const saved=localStorage.getItem('certs-theme');
-if(saved){body.dataset.theme=saved;btn.textContent=saved==='light'?'🌙':'☀️'}
-btn.addEventListener('click',()=>{
-  const isDark=body.dataset.theme==='dark';
-  body.dataset.theme=isDark?'light':'dark';
-  btn.textContent=isDark?'🌙':'☀️';
-  localStorage.setItem('certs-theme',body.dataset.theme);
+function setTheme(t){
+  body.dataset.theme=t;
+  toggleBtns.forEach(b=>{
+    const isActive=b.dataset.theme===t;
+    b.classList.toggle('active',isActive);
+    b.setAttribute('aria-checked',isActive?'true':'false');
+  });
+  localStorage.setItem('certs-theme',t);
+}
+if(saved){setTheme(saved)}
+toggleBtns.forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.theme)));
 });
 document.getElementById('scanForm').addEventListener('submit',(e)=>{
   e.preventDefault();
@@ -267,7 +278,7 @@ ${rl ? `<div class="rl-pill" id="rlPill" data-remaining="${rl.remaining}" data-l
 function renderEmpty(): string {
   return `
 <div style="margin-top:3rem;text-align:center">
-  <p style="color:var(--dim);font-family:var(--font-mono);font-size:12px"><code>curl -s https://certs.lol/stripe.com | jq</code></p>
+  <p style="color:var(--dim);font-family:var(--font-mono);font-size:12px"><code>curl -s https://certs.lol/stripe.com</code></p>
   <div class="examples">
     <a href="/stripe.com">stripe.com</a>
     <a href="/github.com">github.com</a>
