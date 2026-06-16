@@ -46,6 +46,8 @@ grade/               — Go grade helpers for CLI
 
 ## Recent Changes
 
+- **June 16:** Audit cleanup — canonical dark tokens updated (#15151f/#2a2a3a), `| jq` removed from terminal prompt, word-based theme toggle replaces emoji
+- **June 15:** Design alignment with .lol family design system (canonical tokens, standardized footer with family links + yoke badge, accessible skip-nav, focus-visible indicators)
 - **June 13:** ECDSA key_size fix, cipher classification overhaul, git squash
 - **June:** MX port 25→587 auto-fallback, OG share banner, verbose flag, multi-IP fallback
 - **Launch:** Fully live with CLI, announce pending
