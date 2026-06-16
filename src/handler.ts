@@ -236,7 +236,7 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
         'X-RateLimit-Reset': String(rl.retryAfter || 60),
       });
     }
-    return htmlResponse(html(undefined, rateLimitMessage(retryMin, target)), 429);
+    return htmlResponse(html(undefined, rateLimitMessage(retryMin, target), { remaining: 0, limit: RATE_LIMIT }), 429);
   }
 
   // Check cache (skip on ?force)
@@ -256,7 +256,7 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
         'Cache-Control': 'public, max-age=300',
       });
     }
-    return htmlResponse(html(result));
+    return htmlResponse(html(result, undefined, { remaining: rl.remaining, limit: RATE_LIMIT }));
   }
 
   // Call probe + enrichment in parallel
@@ -359,7 +359,7 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
         'Cache-Control': 'public, max-age=300',
       });
     }
-    return htmlResponse(html(result));
+    return htmlResponse(html(result, undefined, { remaining: rl.remaining, limit: RATE_LIMIT }));
 
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

@@ -1,7 +1,12 @@
 import type { ScanResult } from './worker';
 
+export interface RateLimitInfo {
+  remaining: number;
+  limit: number;
+  reset?: number;
+}
 
-export function html(data?: ScanResult, error?: string): string {
+export function html(data?: ScanResult, error?: string, rl?: RateLimitInfo): string {
   const title = data ? `${data.target} — certs.lol` : 'certs.lol — Fast, API-first TLS scanning.';
   const desc = data ? `TLS scan: ${data.target} scored ${data.grade}. ${data.probe_ms}ms.` : 'Fast, API-first TLS scanning. No accounts, no tracking, no nonsense.';
   const targetVal = data?.target || '';
@@ -159,6 +164,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
   .hook{font-size:11px;flex-wrap:wrap}
   .foot-links,.foot-family{flex-direction:row;gap:0}
 }
+/* Rate limit pill */
+.rl-pill{position:fixed;bottom:16px;right:16px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-family:var(--font-mono);font-size:11px;color:var(--dim);z-index:100;cursor:pointer;opacity:0.7;transition:opacity 0.3s,color 0.3s,border-color 0.3s}
+.rl-pill.warn{color:var(--warn);border-color:var(--warn);opacity:1}
+.rl-pill.danger{color:var(--err);border-color:var(--err);opacity:1}
+.rl-detail{display:none;position:fixed;bottom:48px;right:16px;background:var(--surface-raised);border:1px solid var(--border);border-radius:8px;padding:10px 14px;min-width:220px;font-family:var(--font-mono);font-size:12px;color:var(--text);z-index:101;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
+.rl-detail.visible{display:block}
+.rl-detail .rl-title{font-weight:600;margin-bottom:4px}
+.rl-bar{height:4px;border-radius:2px;background:var(--border);margin-bottom:8px;overflow:hidden}
+.rl-bar-fill{height:100%;border-radius:2px;transition:width 0.3s}
+.rl-detail .rl-info{color:var(--dim);font-size:11px;white-space:pre-line}
 </style>
 </head>
 <body data-theme="dark">
@@ -207,7 +222,37 @@ document.getElementById('scanForm').addEventListener('submit',(e)=>{
   const q=document.querySelector('.di').value.trim();
   if(q)window.location.href='/'+encodeURIComponent(q);
 });
+// Rate limit pill
+(function(){
+  const pill=document.getElementById('rlPill');
+  const detail=document.getElementById('rlDetail');
+  if(!pill||!detail)return;
+  const r=parseInt(pill.dataset.remaining||'',10);
+  const l=parseInt(pill.dataset.limit||'',10);
+  if(isNaN(r)||isNaN(l)||l<=0)return;
+  const pct=r/l;
+  const used=l-r;
+  pill.textContent=r<=0?'Resets soon':r+'/'+l;
+  pill.style.display='block';
+  if(pct<=0.10){pill.classList.add('danger')}
+  else if(pct<=0.25){pill.classList.add('warn')}
+  const color=pct<=0.10?'var(--err)':pct<=0.25?'var(--warn)':'var(--dim)';
+  document.getElementById('rlTitle').textContent=r<=0?'Rate limit reached':pct<=0.25?'Running low':'API usage';
+  document.getElementById('rlTitle').style.color=color;
+  document.getElementById('rlBarFill').style.width=Math.min((used/l)*100,100)+'%';
+  document.getElementById('rlBarFill').style.background=color;
+  document.getElementById('rlInfo').textContent=used+' of '+l+' scans used this hour\\nRolling 1-hour window';
+  pill.addEventListener('mouseenter',function(){detail.classList.add('visible')});
+  pill.addEventListener('mouseleave',function(){detail.classList.remove('visible')});
+  pill.addEventListener('click',function(){detail.classList.toggle('visible')});
+})();
 </script>
+${rl ? `<div class="rl-pill" id="rlPill" data-remaining="${rl.remaining}" data-limit="${rl.limit}"></div>
+<div class="rl-detail" id="rlDetail">
+  <div class="rl-title" id="rlTitle">API usage</div>
+  <div class="rl-bar"><div class="rl-bar-fill" id="rlBarFill"></div></div>
+  <div class="rl-info" id="rlInfo"></div>
+</div>` : ''}
 </body>
 </html>`;
 }
