@@ -1,6 +1,7 @@
 import type { Env, ProbeResult, ScanResult } from './worker';
 import { html } from './spa';
 import { trackScan, handleUsage } from './usage';
+import { renderStatusPage } from './status';
 import { enrich } from './enrich';
 import { evaluateCompliance } from './compliance';
 
@@ -168,6 +169,10 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
 
   if (path === '/usage') {
     return handleUsage(request, env);
+  }
+
+  if (path === '/status') {
+    return renderStatusPage(env);
   }
 
   if (path === '/robots.txt') {
