@@ -110,11 +110,29 @@ export async function trackScan(env: Env, event: {
 }
 
 export async function handleUsage(request: Request, env: Env): Promise<Response> {
-  // Admin key auth
+  // Admin key auth — accept ?key=, Bearer token, or Basic auth (password = ADMIN_KEY)
   const url = new URL(request.url);
-  const key = url.searchParams.get('key') || request.headers.get('Authorization')?.replace('Bearer ', '');
+  const authHeader = request.headers.get('Authorization') || '';
+  let key = url.searchParams.get('key') || '';
+
+  // Bearer token
+  if (!key && authHeader.startsWith('Bearer ')) {
+    key = authHeader.slice(7);
+  }
+
+  // HTTP Basic Auth (browser native prompt) — password field is the admin key
+  if (!key && authHeader.startsWith('Basic ')) {
+    try {
+      const decoded = atob(authHeader.slice(6));
+      key = decoded.split(':').slice(1).join(':');
+    } catch { /* invalid base64 */ }
+  }
+  
   if (key !== env.ADMIN_KEY) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response('Unauthorized', {
+      status: 401,
+      headers: { 'WWW-Authenticate': 'Basic realm="Usage Dashboard"' },
+    });
   }
 
   const [globalRaw, topRaw, errRaw] = await Promise.all([
