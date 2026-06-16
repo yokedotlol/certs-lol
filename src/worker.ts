@@ -66,6 +66,7 @@ export interface ScanResult extends ProbeResult {
     version: string;
     cache_hit: boolean;
     cache_ttl: number;
+    dns_report?: string;
     full_report?: string;
     docs: string;
   };

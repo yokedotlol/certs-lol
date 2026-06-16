@@ -28,6 +28,10 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Cross-Origin-Embedder-Policy': 'credentialless',
 };
 
+function cspWithNonce(nonce: string): string {
+  return "default-src 'self'; script-src 'self' 'nonce-" + nonce + "'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data: https://yoke.lol; frame-ancestors 'none'; base-uri 'self'";
+}
+
 function isIP(target: string): boolean {
   // IPv4
   if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(target)) return true;
@@ -94,7 +98,7 @@ function jsonResponse(data: unknown, status = 200, extra?: Record<string, string
   );
 }
 
-function htmlResponse(body: string, status = 200): Response {
+function htmlResponse(body: string, status = 200, nonce?: string): Response {
   return addHeaders(
     new Response(body, {
       status,
@@ -104,6 +108,7 @@ function htmlResponse(body: string, status = 200): Response {
         'Vary': 'Accept, Accept-Encoding',
       },
     }),
+    nonce ? { 'Content-Security-Policy': cspWithNonce(nonce) } : undefined,
   );
 }
 
@@ -126,6 +131,11 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
     return jsonResponse({ error: 'Method not allowed' }, 405);
   }
 
+  // Health endpoint — not rate limited
+  if (path === '/health') {
+    return jsonResponse({ status: 'ok', service: 'certs.lol' });
+  }
+
   // Static routes
   if (path === '/' || path === '') {
     if (wantsJSON(request)) {
@@ -137,7 +147,8 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
         version: '1.0.0',
       });
     }
-    return htmlResponse(html());
+    const nonce = crypto.randomUUID();
+    return htmlResponse(html(undefined, undefined, undefined, nonce), 200, nonce);
   }
 
   if (path === '/api/docs') {
@@ -236,7 +247,8 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
         'X-RateLimit-Reset': String(rl.retryAfter || 60),
       });
     }
-    return htmlResponse(html(undefined, rateLimitMessage(retryMin, target), { remaining: 0, limit: RATE_LIMIT }), 429);
+    const rlNonce = crypto.randomUUID();
+    return htmlResponse(html(undefined, rateLimitMessage(retryMin, target), { remaining: 0, limit: RATE_LIMIT }, rlNonce), 429, rlNonce);
   }
 
   // Check cache (skip on ?force)
@@ -256,7 +268,8 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
         'Cache-Control': 'public, max-age=300',
       });
     }
-    return htmlResponse(html(result, undefined, { remaining: rl.remaining, limit: RATE_LIMIT }));
+    const cachedNonce = crypto.randomUUID();
+    return htmlResponse(html(result, undefined, { remaining: rl.remaining, limit: RATE_LIMIT }, cachedNonce), 200, cachedNonce);
   }
 
   // Call probe + enrichment in parallel
@@ -342,7 +355,7 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
         cache_hit: false,
         cache_ttl: CACHE_TTL,
         docs: 'https://certs.lol/api/docs',
-        ...(targetIsIP ? {} : { full_report: `https://yoke.lol/${target}` }),
+        ...(targetIsIP ? {} : { dns_report: `https://ns.lol/${target}`, full_report: `https://yoke.lol/${target}` }),
       },
     };
 
@@ -359,7 +372,8 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
         'Cache-Control': 'public, max-age=300',
       });
     }
-    return htmlResponse(html(result, undefined, { remaining: rl.remaining, limit: RATE_LIMIT }));
+    const scanNonce = crypto.randomUUID();
+    return htmlResponse(html(result, undefined, { remaining: rl.remaining, limit: RATE_LIMIT }, scanNonce), 200, scanNonce);
 
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -486,10 +500,13 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
 
 <h2>Rate Limiting</h2>
 <ul>
-<li>60 requests per hour per IP</li>
-<li>Results cached for 6h — add <code>?force</code> to bypass</li>
+<li><strong>60 requests per hour</strong> per IP — rolling window</li>
+<li>Results cached for 6h — add <code>?force</code> to bypass, but force-scans still count</li>
+<li>Cached results also count against the limit (abuse prevention)</li>
 <li>429 response with <code>Retry-After</code> header when exceeded</li>
 </ul>
+<p><strong>Why 60/hr?</strong> TLS scans are resource-intensive — each request triggers a real probe that makes live TLS connections to the target from a <a href="https://fly.io">Fly.io</a> edge node. This is significantly heavier than DNS lookups, which is why certs.lol's limit is lower than other .lol tools (e.g. <a href="https://ns.lol">ns.lol</a> allows 120/hr).</p>
+<p>For unlimited local scanning, <a href="/cli">install the CLI</a> — same engine, no rate limits, no middleman.</p>
 <p>Rate limits exist to prevent abuse and keep hosting costs near zero. If you need more volume, grab the <a href="https://github.com/yokedotlol/certs-lol">source</a> and run your own instance, or use the full domain report at <a href="https://yoke.lol">yoke.lol</a>.</p>
 
 <h2>Response Shape</h2>
@@ -575,6 +592,7 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
     "cache_hit": false,
     "cache_ttl": 21600,
     "docs": "https://certs.lol/api/docs",
+    "dns_report": "https://ns.lol/example.com",
     "full_report": "https://yoke.lol/example.com"
   }
 }</code></pre>

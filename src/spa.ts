@@ -6,11 +6,12 @@ export interface RateLimitInfo {
   reset?: number;
 }
 
-export function html(data?: ScanResult, error?: string, rl?: RateLimitInfo): string {
+export function html(data?: ScanResult, error?: string, rl?: RateLimitInfo, nonce?: string): string {
   const title = data ? `${data.target} — certs.lol` : 'certs.lol — Fast, API-first TLS scanning.';
   const desc = data ? `TLS scan: ${data.target} scored ${data.grade}. ${data.probe_ms}ms.` : 'Fast, API-first TLS scanning. No accounts, no tracking, no nonsense.';
   const targetVal = data?.target || '';
   const isIP = data?.is_ip || false;
+  const nonceAttr = nonce ? ` nonce="${nonce}"` : '';
 
   const hooks = [
     ["is {d}'s email spoofable?", "check on yoke.lol →"],
@@ -45,7 +46,7 @@ export function html(data?: ScanResult, error?: string, rl?: RateLimitInfo): str
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script type="application/ld+json">${JSON.stringify({
+<script type="application/ld+json"${nonceAttr}>${JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: 'certs.lol',
@@ -135,13 +136,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 .hook a{color:var(--accent);text-decoration:none;font-weight:500}
 .hook a:hover{text-decoration:underline}
 
-.foot{padding:2rem 0 3rem;margin-top:0.5rem;font-size:10px;color:var(--faint);font-family:var(--font-mono);text-align:center}
-.foot-links{display:flex;justify-content:center;gap:0;flex-wrap:wrap}
-.foot-links a{color:var(--dim);text-decoration:none;padding:0 6px}
-.foot-links a:hover{color:var(--muted)}
-.foot-family{margin-top:8px;display:flex;justify-content:center;gap:0}
-.foot-family a{color:var(--faint);text-decoration:none;padding:0 6px;transition:color .2s}
-.foot-family a:hover{color:var(--accent)}
+.footer{padding:2rem 0 3rem;margin-top:0.5rem;font-size:10px;color:var(--faint);font-family:var(--font-mono);text-align:center}
+.footer-links{display:flex;justify-content:center;gap:0;flex-wrap:wrap}
+.footer-links a{color:var(--dim);text-decoration:none;padding:0 6px}
+.footer-links a:hover{color:var(--muted)}
+.footer-family{margin-top:8px;display:flex;justify-content:center;gap:0}
+.footer-family a{color:var(--faint);text-decoration:none;padding:0 6px;transition:color .2s}
+.footer-family a:hover{color:var(--accent)}
 .yoke-badge{display:inline-block;margin-top:10px}
 .yoke-badge img{opacity:0.6;transition:opacity .2s;vertical-align:middle}
 .yoke-badge:hover img{opacity:1}
@@ -162,7 +163,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
   .section{margin-top:1.5rem}
   .r .k{width:120px;font-size:12px}.r .v{font-size:12px}
   .hook{font-size:11px;flex-wrap:wrap}
-  .foot-links,.foot-family{flex-direction:row;gap:0}
+  .footer-links,.footer-family{flex-direction:row;gap:0}
 }
 /* Rate limit pill */
 .rl-pill{position:fixed;bottom:16px;right:16px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-family:var(--font-mono);font-size:11px;color:var(--dim);z-index:100;cursor:pointer;opacity:0.7;transition:opacity 0.3s,color 0.3s,border-color 0.3s}
@@ -200,14 +201,14 @@ ${data ? renderResult(data, randomHook, isIP) : (error ? '' : renderEmpty())}
 
 </main>
 
-<footer class="foot">
-  <div class="foot-links"><a href="/cli">cli</a> · <a href="/api/docs">docs</a> · <a href="https://github.com/yokedotlol/certs-lol">github</a> · <a href="/privacy">privacy</a> · <a href="/terms">terms</a></div>
-  <div class="foot-family"><a href="https://yoke.lol">yoke</a> · <a href="https://ns.lol">ns</a></div>
+<footer class="footer">
+  <div class="footer-links"><a href="/cli">cli</a> · <a href="/api/docs">docs</a> · <a href="https://github.com/yokedotlol/certs-lol">github</a> · <a href="/privacy">privacy</a> · <a href="/terms">terms</a></div>
+  <div class="footer-family"><a href="https://yoke.lol">yoke</a> · <a href="https://ns.lol">ns</a></div>
   <a href="https://yoke.lol/certs.lol" class="yoke-badge"><img src="https://yoke.lol/badge/certs.lol.svg" alt="Yoke score for certs.lol" height="20"></a>
 </footer>
 </div>
 
-<script>
+<script${nonceAttr}>
 const body=document.body,btn=document.getElementById('themeBtn');
 const saved=localStorage.getItem('certs-theme');
 if(saved){body.dataset.theme=saved;btn.textContent=saved==='light'?'● dark':'☀ light'}
