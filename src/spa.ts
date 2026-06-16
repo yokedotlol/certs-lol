@@ -137,11 +137,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 .hook a:hover{text-decoration:underline}
 
 .footer{padding:2rem 0 3rem;margin-top:0.5rem;font-size:10px;color:var(--faint);font-family:var(--font-mono);text-align:center}
-.footer-links{display:flex;justify-content:center;gap:0;flex-wrap:wrap}
-.footer-links a{color:var(--dim);text-decoration:none;padding:0 6px}
+.footer-links{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+.footer-links a{color:var(--dim);text-decoration:none}
 .footer-links a:hover{color:var(--muted)}
-.footer-family{margin-top:8px;display:flex;justify-content:center;gap:0}
-.footer-family a{color:var(--faint);text-decoration:none;padding:0 6px;transition:color .2s}
+.footer-family{margin-top:8px;display:flex;justify-content:center;gap:16px}
+.footer-family a{color:var(--faint);text-decoration:none;transition:color .2s}
 .footer-family a:hover{color:var(--accent)}
 .yoke-badge{display:inline-block;margin-top:10px}
 .yoke-badge img{opacity:0.6;transition:opacity .2s;vertical-align:middle}
@@ -163,7 +163,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
   .section{margin-top:1.5rem}
   .r .k{width:120px;font-size:12px}.r .v{font-size:12px}
   .hook{font-size:11px;flex-wrap:wrap}
-  .footer-links,.footer-family{flex-direction:row;gap:0}
+  .footer-links,.footer-family{flex-direction:row;gap:16px}
 }
 /* Rate limit pill */
 .rl-pill{position:fixed;bottom:16px;right:16px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-family:var(--font-mono);font-size:11px;color:var(--dim);z-index:100;cursor:pointer;opacity:0.7;transition:opacity 0.3s,color 0.3s,border-color 0.3s}
@@ -202,8 +202,8 @@ ${data ? renderResult(data, randomHook, isIP) : (error ? '' : renderEmpty())}
 </main>
 
 <footer class="footer">
-  <div class="footer-links"><a href="/cli">cli</a> · <a href="/api/docs">docs</a> · <a href="https://github.com/yokedotlol/certs-lol">github</a> · <a href="/privacy">privacy</a> · <a href="/terms">terms</a></div>
-  <div class="footer-family"><a href="https://yoke.lol">yoke</a> · <a href="https://ns.lol">ns</a></div>
+  <div class="footer-links"><a href="/cli">cli</a><a href="/api/docs">docs</a><a href="https://github.com/yokedotlol/certs-lol">github</a><a href="/privacy">privacy</a><a href="/terms">terms</a></div>
+  <div class="footer-family"><a href="https://yoke.lol">yoke</a><a href="https://ns.lol">ns</a></div>
   <a href="https://yoke.lol/certs.lol" class="yoke-badge"><img src="https://yoke.lol/badge/certs.lol.svg" alt="Yoke score for certs.lol" height="20"></a>
 </footer>
 </div>
