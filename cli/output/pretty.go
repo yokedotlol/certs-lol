@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/yokedotlol/certs-lol/enrich"
 	"github.com/yokedotlol/certs-lol/probe"
 )
 
-// ANSI color codes
-const (
+// ANSI color codes — mutable so DisableColors can zero them.
+var (
 	reset  = "\033[0m"
 	bold   = "\033[1m"
 	dim    = "\033[2m"
@@ -21,6 +22,24 @@ const (
 	yellow = "\033[33m"
 	cyan   = "\033[36m"
 )
+
+func init() {
+	if _, ok := os.LookupEnv("NO_COLOR"); ok {
+		DisableColors()
+	}
+}
+
+// DisableColors zeroes all ANSI escape sequences. Called automatically
+// when the NO_COLOR env var is set, or manually via the --no-color flag.
+func DisableColors() {
+	reset = ""
+	bold = ""
+	dim = ""
+	red = ""
+	green = ""
+	yellow = ""
+	cyan = ""
+}
 
 func check(ok bool) string {
 	if ok {

@@ -20,6 +20,7 @@ import (
 	"github.com/yokedotlol/certs-lol/cli/assert"
 	"github.com/yokedotlol/certs-lol/cli/bulk"
 	"github.com/yokedotlol/certs-lol/cli/cmd"
+	"github.com/yokedotlol/certs-lol/cli/output"
 	"github.com/yokedotlol/certs-lol/enrich"
 	"github.com/yokedotlol/certs-lol/probe"
 )
@@ -44,6 +45,9 @@ func main() {
 		if err != nil {
 			fatal(err)
 		}
+		if cfg.noColor {
+			output.DisableColors()
+		}
 		opts := buildScanOpts(cfg)
 		code := cmd.RunCompare(os.Stdout, cfg.targets, opts)
 		os.Exit(code)
@@ -67,6 +71,10 @@ func main() {
 	cfg, err := parseArgs(args)
 	if err != nil {
 		fatal(err)
+	}
+
+	if cfg.noColor {
+		output.DisableColors()
 	}
 
 	// Load config file (additive with flags)
@@ -191,6 +199,7 @@ type config struct {
 	probeOnly  bool
 	noPrivate  bool
 	quiet      bool
+	noColor    bool
 	mx         bool
 	verbose    bool
 	port       int
@@ -240,6 +249,8 @@ func parseArgs(args []string) (*config, error) {
 			cfg.noPrivate = true
 		case "--quiet", "-q":
 			cfg.quiet = true
+		case "--no-color":
+			cfg.noColor = true
 		case "--verbose", "-v":
 			cfg.verbose = true
 		case "--mx":
@@ -398,6 +409,7 @@ Output:
   -j, --json                          JSON output (default when piped)
   -t, --table                         Force pretty output
   -g, --grade                         Print only the letter grade
+      --no-color                      Disable ANSI colors (also: NO_COLOR env)
 
 Scanning:
   -p, --port <N>                      Port (default 443)
