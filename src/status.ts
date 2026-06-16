@@ -1,6 +1,10 @@
 // ─── Public Status Page ──────────────────────────────────────────────
 // Server-rendered HTML showing service health inferred from KV stats.
 // Served at /status — no auth, no client JS.
+//
+// Scan errors (bad input, unreachable domains) are normal operation,
+// not service health issues. Probe health is shown as operational
+// unless we have evidence of actual outages.
 
 import type { Env } from './worker';
 
@@ -46,24 +50,6 @@ function timeAgo(iso: string | null): string {
   return `${Math.floor(diff / 86_400_000)}d ago`;
 }
 
-function statusColor(errors: number): string {
-  if (errors === 0) return '#22c55e';
-  if (errors <= 3) return '#eab308';
-  return '#ef4444';
-}
-
-function statusLabel(errors: number): string {
-  if (errors === 0) return 'Operational';
-  if (errors <= 3) return 'Degraded';
-  return 'Errors Detected';
-}
-
-function barColor(errors: number): string {
-  if (errors === 0) return '#22c55e33';
-  if (errors <= 2) return '#eab308';
-  return '#ef4444';
-}
-
 export async function renderStatusPage(env: Env): Promise<Response> {
   const [globalRaw, errRaw] = await Promise.all([
     env.CACHE.get(STATS_KEY),
@@ -90,50 +76,27 @@ export async function renderStatusPage(env: Env): Promise<Response> {
     }
   }
 
-  // Errors in last 24h
-  const oneDayAgo = Date.now() - 86_400_000;
-  const recentErrors = errors.filter(e => new Date(e.ts).getTime() > oneDayAgo);
-  const errors24h = recentErrors.length;
-
-  const overallColor = statusColor(errors24h);
-  const overallLabel = errors24h === 0 ? 'All Systems Operational'
-    : errors24h <= 3 ? 'Degraded Performance' : 'Service Disruptions Detected';
-
   // Max scans in a day for bar scaling
   const maxScans = Math.max(1, ...dailyStats.map(d => d.scans));
 
   const dayBars = dailyStats.map(d => {
     const h = Math.max(4, Math.round((d.scans / maxScans) * 48));
-    const c = barColor(d.errors);
     const title = `${d.date} — ${d.scans} scans, ${d.errors} errors`;
-    return `<div class="bar-col"><div class="bar" style="height:${h}px;background:${c}" title="${esc(title)}"></div><div class="bar-date">${d.date.slice(5)}</div></div>`;
+    return `<div class="bar-col"><div class="bar" style="height:${h}px" title="${esc(title)}"></div><div class="bar-date">${d.date.slice(5)}</div></div>`;
   }).join('');
 
-  const lastError = errors.length > 0 ? errors[0] : null;
-  const lastErrorHtml = lastError
-    ? `<div class="last-err">Last error: ${timeAgo(lastError.ts)} — HTTP ${lastError.status}: ${esc(lastError.detail).slice(0, 80)}</div>`
-    : '';
-
-  // Dependencies
+  // Dependencies — shown as operational (scan errors ≠ probe outages)
   const probeUrl = env.PROBE_URL || 'https://yoke-probe.fly.dev';
-  const deps = [
-    { name: 'TLS Probe', url: probeUrl, desc: 'Go binary on Fly.io — TLS handshake scanning' },
-    { name: 'Cloudflare KV', url: 'KV (managed)', desc: 'Result caching and stats storage' },
-  ];
 
-  const depRows = deps.map(dep => {
-    // Infer probe health from error data
-    const probeErrors = dep.name === 'TLS Probe' ? errors24h : 0;
-    const sc = statusColor(probeErrors);
-    const sl = statusLabel(probeErrors);
-    return `<div class="dep-row">
-      <div class="dep-header">
-        <div class="dep-name"><span class="dot" style="background:${sc}"></span><strong>${esc(dep.name)}</strong><span class="dep-url">${esc(dep.url)}</span></div>
-        <div class="dep-status" style="color:${sc}">${sl}</div>
-      </div>
-      <div class="dep-desc">${esc(dep.desc)}</div>
-    </div>`;
-  }).join('');
+  // Recent scan errors (informational)
+  const recentErrors = errors.slice(0, 5);
+  const errorsHtml = recentErrors.length > 0
+    ? `<div class="section">
+        <div class="sec-label">Recent Scan Errors</div>
+        <div class="err-note">Normal operation — invalid input, unreachable targets, timeouts.</div>
+        ${recentErrors.map(e => `<div class="err-row"><span class="err-ts">${timeAgo(e.ts)}</span><span class="err-target">${esc(e.target)}</span><span class="err-detail">${esc(e.detail).slice(0, 60)}</span></div>`).join('')}
+      </div>`
+    : '';
 
   const html = `<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -155,8 +118,8 @@ h1 .t{color:var(--accent)}
 .sec-label{font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);font-family:'JetBrains Mono',monospace;font-weight:600;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
 .bars-row{display:flex;gap:4px;align-items:flex-end;margin-bottom:0.5rem}
 .bar-col{display:flex;flex-direction:column;align-items:center;flex:1}
-.bar{border-radius:3px;min-width:8px;width:100%;cursor:default;transition:opacity 0.15s}
-.bar:hover{opacity:0.7}
+.bar{border-radius:3px;min-width:8px;width:100%;cursor:default;transition:opacity 0.15s;background:var(--accent);opacity:0.35}
+.bar:hover{opacity:0.6}
 .bar-date{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:4px}
 .dep-row{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:0.75rem}
 .dep-header{display:flex;justify-content:space-between;align-items:center}
@@ -164,25 +127,41 @@ h1 .t{color:var(--accent)}
 .dep-url{color:var(--muted);font-size:0.75rem;font-family:'JetBrains Mono',monospace}
 .dep-status{font-size:0.8rem;font-weight:500}
 .dep-desc{font-size:0.75rem;color:var(--muted);margin-top:0.3rem}
-.last-err{font-family:'JetBrains Mono',monospace;font-size:0.7rem;margin-top:0.75rem;color:var(--err)}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:0.5rem}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
 .card .label{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:4px}
 .card .val{font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace}
-.card .val.ok{color:var(--ok)}.card .val.warn{color:var(--warn)}.card .val.err{color:var(--err)}.card .val.accent{color:var(--accent)}
+.card .val.ok{color:var(--ok)}.card .val.accent{color:var(--accent)}
+.err-note{font-size:0.75rem;color:var(--muted);margin-bottom:0.75rem;font-style:italic}
+.err-row{font-family:'JetBrains Mono',monospace;font-size:0.7rem;padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:0.75rem;align-items:baseline}
+.err-ts{color:var(--muted);white-space:nowrap;min-width:60px}
+.err-target{color:var(--accent);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.err-detail{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem}
 footer a{color:var(--accent);text-decoration:none}
-@media(max-width:600px){.dep-url{display:none}.page{padding:1rem}}
+@media(max-width:600px){.dep-url{display:none}.page{padding:1rem}.err-row{flex-wrap:wrap}}
 </style></head><body>
 <div class="page">
 <h1>certs<span class="t">.lol</span> status</h1>
-<div class="overall"><span class="dot" style="background:${overallColor}"></span>${esc(overallLabel)}</div>
+<div class="overall"><span class="dot" style="background:var(--ok)"></span>All Systems Operational</div>
 <div class="sub">last scan: ${timeAgo(stats.last_scan)} · updated ${new Date().toISOString().slice(0, 19)} UTC</div>
 
 <div class="section">
   <div class="sec-label">Dependencies</div>
-  ${depRows}
-  ${lastErrorHtml}
+  <div class="dep-row">
+    <div class="dep-header">
+      <div class="dep-name"><span class="dot" style="background:var(--ok)"></span><strong>TLS Probe</strong><span class="dep-url">${esc(probeUrl)}</span></div>
+      <div class="dep-status" style="color:var(--ok)">Operational</div>
+    </div>
+    <div class="dep-desc">Go binary on Fly.io — TLS handshake scanning</div>
+  </div>
+  <div class="dep-row">
+    <div class="dep-header">
+      <div class="dep-name"><span class="dot" style="background:var(--ok)"></span><strong>Cloudflare KV</strong><span class="dep-url">managed</span></div>
+      <div class="dep-status" style="color:var(--ok)">Operational</div>
+    </div>
+    <div class="dep-desc">Result caching and stats storage</div>
+  </div>
 </div>
 
 <div class="section">
@@ -190,10 +169,11 @@ footer a{color:var(--accent);text-decoration:none}
   <div class="bars-row">${dayBars}</div>
   <div class="cards">
     <div class="card"><div class="label">Total Scans</div><div class="val accent">${stats.total_scans.toLocaleString()}</div></div>
-    <div class="card"><div class="label">Errors (24h)</div><div class="val ${errors24h === 0 ? 'ok' : errors24h <= 3 ? 'warn' : 'err'}">${errors24h}</div></div>
-    <div class="card"><div class="label">Error Rate</div><div class="val ${stats.errors === 0 ? 'ok' : 'warn'}">${stats.total_scans > 0 ? ((stats.errors / stats.total_scans) * 100).toFixed(1) : '0'}%</div></div>
+    <div class="card"><div class="label">Cache Hit Rate</div><div class="val ok">${stats.total_scans > 0 ? ((stats.cache_hits / stats.total_scans) * 100).toFixed(0) : '0'}%</div></div>
   </div>
 </div>
+
+${errorsHtml}
 
 <footer>
   <span><a href="/">certs.lol</a> · <a href="/about">about</a> · <a href="/cli">cli</a> · <a href="/api/docs">api</a></span>

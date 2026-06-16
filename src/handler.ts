@@ -240,7 +240,12 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
     return jsonResponse({ error: 'Not found' }, 404);
   }
 
-  // Validate target
+  // Validate target — reject file extensions from bot/crawler noise before hitting the probe
+  const FILE_EXT = /\.(png|jpe?g|gif|svg|webp|ico|css|js|map|json|xml|txt|html?|woff2?|ttf|eot|php|aspx?|pdf|zip|gz|bak|log|env)$/i;
+  if (FILE_EXT.test(target)) {
+    return jsonResponse({ error: 'Invalid domain or IP' }, 400);
+  }
+
   const targetIsIP = isIP(target);
   if (!targetIsIP && !/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/.test(target)) {
     return jsonResponse({ error: 'Invalid domain or IP' }, 400);
