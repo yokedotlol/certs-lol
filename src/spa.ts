@@ -155,6 +155,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 .skip-nav{position:absolute;left:-9999px;top:0;z-index:200;padding:8px 16px;background:var(--accent);color:var(--accent-fg,#fff);font-family:var(--font-mono);font-size:12px;text-decoration:none;border-radius:0 0 6px 0}
 .skip-nav:focus{left:0}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.input-wrap :focus-visible,.input-wrap:focus-visible{outline:none}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 .show-m{display:none}
