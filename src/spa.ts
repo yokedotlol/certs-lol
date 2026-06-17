@@ -55,6 +55,7 @@ export function html(data?: ScanResult, error?: string, rl?: RateLimitInfo, nonc
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    author: { '@type': 'Organization', name: 'Yoke', url: 'https://yoke.lol' },
   })}</script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -149,6 +150,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 .yoke-badge{display:inline-block}
 .yoke-badge img{opacity:0.6;transition:opacity .2s;vertical-align:middle}
 .yoke-badge:hover img{opacity:1}
+.footer-tagline{font-size:10px;color:var(--faint);margin-bottom:2px}
+.footer-tagline a{color:var(--dim);text-decoration:none;transition:color .2s}
+.footer-tagline a:hover{color:var(--accent)}
 
 .examples{display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap}
 .examples a{padding:6px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:var(--font-mono);font-size:0.82rem;color:var(--accent);text-decoration:none;transition:background .2s}
@@ -201,7 +205,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);-webkit
 
 <nav class="input-wrap" aria-label="Domain scan">
   <form action="/" method="get" id="scanForm" role="search">
-  <span class="cm" aria-hidden="true">$</span><span class="dm" aria-hidden="true">&nbsp;certs&nbsp;▸&nbsp;</span><label for="scanInput" class="sr-only">Domain or IP to scan</label><input class="di" id="scanInput" type="text" name="q" value="${esc(targetVal)}" placeholder="domain or IP" spellcheck="false" autocomplete="off" autofocus><span class="cur" aria-hidden="true"></span>
+  <span class="cm" aria-hidden="true">$</span><span class="dm" aria-hidden="true">&nbsp;certs&nbsp;▸&nbsp;</span><label for="scanInput" class="sr-only">Domain or IP to scan</label><input class="di" id="scanInput" type="text" name="q" value="${esc(targetVal)}" placeholder="domain or IP" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" inputmode="url" autofocus><span class="cur" aria-hidden="true"></span>
   </form>
 </nav>
 
@@ -214,7 +218,8 @@ ${data ? renderResult(data, randomHook, isIP) : (error ? '' : renderEmpty())}
 
 <footer class="footer">
   <div class="footer-links"><a href="/cli">cli</a><a href="/api/docs">docs</a><a href="https://github.com/yokedotlol/certs-lol">github</a><a href="/privacy">privacy</a><a href="/terms">terms</a></div>
-  <div class="footer-family"><a href="https://yoke.lol">yoke</a><a href="https://ns.lol">ns</a></div>
+  <div class="footer-tagline">Part of the <a href="https://yoke.lol/tools">.lol tools</a></div>
+  <div class="footer-family"><a href="https://yoke.lol">yoke</a><a href="https://ns.lol">ns</a><a href="https://xhttp.lol">xhttp</a></div>
   <a href="https://yoke.lol/certs.lol" class="yoke-badge"><img src="https://yoke.lol/badge/certs.lol.svg" alt="Yoke score for certs.lol" height="20"></a>
 </footer>
 </div>

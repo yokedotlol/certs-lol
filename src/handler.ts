@@ -157,6 +157,12 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
         usage: 'curl -s https://certs.lol/stripe.com | jq',
         docs: 'https://certs.lol/api/docs',
         version: '1.0.0',
+        family: {
+          tls: 'https://certs.lol',
+          dns: 'https://ns.lol',
+          http: 'https://xhttp.lol',
+          domains: 'https://yoke.lol',
+        },
       });
     }
     const nonce = crypto.randomUUID();
@@ -376,7 +382,7 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
         cache_hit: false,
         cache_ttl: CACHE_TTL,
         docs: 'https://certs.lol/api/docs',
-        ...(targetIsIP ? {} : { dns_report: `https://ns.lol/${target}`, full_report: `https://yoke.lol/${target}` }),
+        ...(targetIsIP ? {} : { dns_report: `https://ns.lol/${target}`, http_report: `https://xhttp.lol/${target}`, full_report: `https://yoke.lol/${target}` }),
       },
     };
 
@@ -614,6 +620,7 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
     "cache_ttl": 21600,
     "docs": "https://certs.lol/api/docs",
     "dns_report": "https://ns.lol/example.com",
+    "http_report": "https://xhttp.lol/example.com",
     "full_report": "https://yoke.lol/example.com"
   }
 }</code></pre>
