@@ -219,7 +219,7 @@ ${data ? renderResult(data, randomHook, isIP) : (error ? '' : renderEmpty())}
 <footer class="footer">
   <div class="footer-links"><a href="/cli">cli</a><a href="/api/docs">docs</a><a href="https://github.com/yokedotlol/certs-lol">github</a><a href="/privacy">privacy</a><a href="/terms">terms</a></div>
   <div class="footer-tagline">Part of the <a href="https://yoke.lol/tools">.lol tools</a></div>
-  <div class="footer-family"><a href="https://yoke.lol">yoke</a><a href="https://ns.lol">ns</a><a href="https://xhttp.lol">xhttp</a></div>
+  <div class="footer-family"><a href="https://yoke.lol">yoke</a><a href="https://ns.lol">ns</a><a href="https://xhttp.lol">xhttp</a><a href="https://vrfy.lol">vrfy</a></div>
   <a href="https://yoke.lol/certs.lol" class="yoke-badge"><img src="https://yoke.lol/badge/certs.lol.svg" alt="Yoke score for certs.lol" height="20"></a>
 </footer>
 </div>

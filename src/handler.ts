@@ -161,6 +161,7 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
           tls: 'https://certs.lol',
           dns: 'https://ns.lol',
           http: 'https://xhttp.lol',
+          email: 'https://vrfy.lol',
           domains: 'https://yoke.lol',
         },
       });
@@ -640,7 +641,7 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
 <h2>No Auth Required</h2>
 <p>No API keys. No accounts. No tracking. Just data.</p>
 
-<div class="footer-link"><a href="/">← back to certs.lol</a></div>
+${staticFooter()}
 </div></body></html>`;
 }
 
@@ -669,7 +670,7 @@ ${metaTags('Privacy Policy', 'certs.lol privacy policy. We collect nothing.')}
 <h2>Contact</h2>
 <p>Questions? <a href="mailto:hello@certs.lol">hello@certs.lol</a></p>
 
-<div class="footer-link"><a href="/">← back to certs.lol</a></div>
+${staticFooter()}
 </div></body></html>`;
 }
 
@@ -702,7 +703,7 @@ ${metaTags('Terms of Service', 'certs.lol terms of service.')}
 <h2>Contact</h2>
 <p><a href="mailto:hello@certs.lol">hello@certs.lol</a></p>
 
-<div class="footer-link"><a href="/">← back to certs.lol</a></div>
+${staticFooter()}
 </div></body></html>`;
 }
 
@@ -725,10 +726,20 @@ ${metaTags('About', 'Fast, API-first TLS scanning. No accounts, no tracking, no 
 <p>Same URL, content-negotiated. curl gets JSON, your browser gets a formatted report. No API keys, no accounts, no tracking.</p>
 
 <h2>Built by</h2>
-<p>certs.lol is part of the <a href="https://yoke.lol">.lol</a> family. The TLS probe that powers certs.lol is the same one that feeds <a href="https://yoke.lol">yoke.lol</a>'s security analysis.</p>
+<p>certs.lol is part of the <a href="https://yoke.lol">.lol</a> family — free developer tools for DNS, TLS, HTTP, email, and domain intelligence.</p>
+<ul>
+<li><a href="https://certs.lol">certs.lol</a> — TLS/SSL scanner (you are here)</li>
+<li><a href="https://ns.lol">ns.lol</a> — DNS toolkit</li>
+<li><a href="https://xhttp.lol">xhttp.lol</a> — HTTP response debugger</li>
+<li><a href="https://vrfy.lol">vrfy.lol</a> — Email validation</li>
+<li><a href="https://yoke.lol">yoke.lol</a> — Full domain intelligence</li>
+</ul>
 <p>Open source: <a href="https://github.com/yokedotlol/certs-lol">github.com/yokedotlol/certs-lol</a></p>
 
-<div class="footer-link"><a href="/">← back to certs.lol</a></div>
+<h2>Contact</h2>
+<p><a href="mailto:hello@certs.lol">hello@certs.lol</a></p>
+
+${staticFooter()}
 </div></body></html>`;
 }
 
@@ -984,7 +995,7 @@ jobs:
 <h2>Source</h2>
 <p><a href="https://github.com/yokedotlol/certs-lol">github.com/yokedotlol/certs-lol</a> — MIT licensed.</p>
 
-<div class="footer-link"><a href="/">← back to certs.lol</a></div>
+${staticFooter()}
 </div></body></html>`;
 }
 
@@ -1017,5 +1028,38 @@ a{color:#9b8afb;text-decoration:none}a:hover{text-decoration:underline}
 pre{background:#111116;border:1px solid #1c1c24;border-radius:6px;padding:12px 16px;overflow-x:auto;margin:0.75rem 0;font-size:13px}
 code{font-family:'JetBrains Mono',monospace;color:#38d9a9}
 .muted{color:#5c5c6b;font-style:italic}
-.footer-link{margin-top:3rem;padding-top:1rem;border-top:1px solid #1c1c24;font-size:12px}`;
+.footer{padding:2rem 0 3rem;margin-top:2rem;font-size:10px;color:#3a3a4a;font-family:'JetBrains Mono',monospace;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.footer a{color:#55556a;text-decoration:none;transition:color .2s}
+.footer a:hover{color:#7a7a8e;text-decoration:none}
+.footer-links{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+.footer-tagline{font-size:10px;color:#3a3a4a;margin-bottom:2px}
+.footer-tagline a{color:#55556a;text-decoration:none;transition:color .2s}
+.footer-tagline a:hover{color:#9b8afb}
+.footer-family{display:flex;justify-content:center;gap:16px}
+.footer-family a{color:#3a3a4a;text-decoration:none;transition:color .2s}
+.footer-family a:hover{color:#9b8afb}
+.yoke-badge{display:inline-block}
+.yoke-badge img{opacity:0.6;transition:opacity .2s;vertical-align:middle}
+.yoke-badge:hover img{opacity:1}`;
+}
+
+function staticFooter(): string {
+  return `<footer class="footer">
+<div class="footer-links">
+  <a href="https://github.com/yokedotlol/certs-lol">GitHub</a>
+  <a href="/api/docs">API</a>
+  <a href="/cli">CLI</a>
+  <a href="/about">About</a>
+  <a href="/privacy">Privacy</a>
+  <a href="/terms">Terms</a>
+</div>
+<div class="footer-tagline">Part of the <a href="https://yoke.lol/tools">.lol tools</a></div>
+<div class="footer-family">
+  <a href="https://yoke.lol">yoke</a>
+  <a href="https://ns.lol">ns</a>
+  <a href="https://xhttp.lol">xhttp</a>
+  <a href="https://vrfy.lol">vrfy</a>
+</div>
+<a href="https://yoke.lol/certs.lol" class="yoke-badge"><img src="https://yoke.lol/badge/certs.lol.svg" alt="Yoke score for certs.lol" height="20"></a>
+</footer>`;
 }
