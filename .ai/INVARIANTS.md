@@ -4,7 +4,7 @@
 
 ## I01 — Grade is computed in the Go probe, never the Worker
 
-`ComputeGrade()` in `probe/grade.go` is the single source of truth for letter grades. The Worker passes through the probe's grade as-is. No grade logic exists in TypeScript.
+`computeGrade()` in the deployed probe (`yoke/fly-proxy/main.go`) is the source of truth for letter grades. The Worker passes through the probe's grade as-is. No grade logic exists in TypeScript. `probe/grade.go` in this repo is the reference implementation but is not what runs in production — see I11.
 
 ## I02 — Probe auth is always required
 

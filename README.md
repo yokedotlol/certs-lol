@@ -1,6 +1,6 @@
 # certs.lol 🔒
 
-Fast, API-first TLS scanning. SSL Labs, but fast and from this decade.
+Fast, API-first TLS scanning. Real-time certificate and configuration analysis.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Cloudflare Workers](https://img.shields.io/badge/runs%20on-Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
@@ -293,10 +293,9 @@ Each scan evaluates TLS configuration against transport encryption requirements 
   "key_alg": "ECDSA",
   "key_size": 256,
   "signature_alg": "ECDSAWithSHA256",
-  "cert_type": "EV",
   "protocols": ["TLS 1.3", "TLS 1.2"],
   "forward_secrecy": true,
-  "key_exchange": "X25519",
+  "key_exchange": "ECDHE (TLS 1.3)",
   "chain_valid": true,
   "chain_depth": 3,
   "chain_certs": [
@@ -417,7 +416,7 @@ Each scan evaluates TLS configuration against transport encryption requirements 
 
 ## Self-hosting
 
-Not designed for self-hosting, but it's MIT — knock yourself out. You'll need:
+Not one-command self-hostable yet, but it's MIT — knock yourself out. You'll need:
 - A Cloudflare account with Workers and KV
 - The Go TLS probe deployed somewhere (see the [yoke repo](https://github.com/yokedotlol/yoke))
 - `PROBE_URL`, `FLY_AUTH_SECRET`, and `ADMIN_KEY` configured
