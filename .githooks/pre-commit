@@ -1,0 +1,11 @@
+#!/bin/sh
+# Pre-commit: typecheck + test
+set -e
+
+echo "→ Typechecking..."
+bun run typecheck
+
+echo "→ Running tests..."
+bun run test
+
+echo "✓ All checks passed"
