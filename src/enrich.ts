@@ -1,4 +1,5 @@
 import type { Env } from './worker';
+import { fetchDomainSignals } from './services/domain-intel';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -31,13 +32,19 @@ export interface EnrichmentResult {
 // ─── Enrichment calls (all parallel) ────────────────────────────────
 
 export async function enrich(domain: string, env: Env): Promise<EnrichmentResult> {
-  const [hsts, http3, dnsSec] = await Promise.all([
+  const [hsts, http3, dnsSec, yokeSignals] = await Promise.all([
     fetchHSTS(domain).catch(() => defaultHSTS()),
     fetchHTTP3(domain, env).catch(() => defaultHTTP3()),
     fetchDNSSecurity(domain).catch(() => defaultDNSSecurity()),
+    fetchDomainSignals(domain, env).catch(() => null),
   ]);
 
-  return { hsts, http3, dns_security: dnsSec };
+  // If yoke returned DNSSEC data, prefer it over inline DoH check
+  const enrichedDnsSec = yokeSignals
+    ? { ...dnsSec, dnssec: yokeSignals.dnssec }
+    : dnsSec;
+
+  return { hsts, http3, dns_security: enrichedDnsSec };
 }
 
 // ─── HSTS (direct fetch from Worker) ────────────────────────────────

@@ -10,6 +10,10 @@ export interface Env {
   FLY_AUTH_SECRET: string;
   PROBE_URL: string;
   RATE_LIMITER: DurableObjectNamespace;
+  /** Yoke domain intelligence service binding (.lol family) */
+  YOKE?: Fetcher;
+  /** Shared key for .lol family service bindings */
+  SERVICE_KEY?: string;
 }
 
 /** What the probe returns from GET /probe-ssl?domain=X */
