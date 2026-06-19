@@ -261,7 +261,27 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
   const clientIP = getClientIP(request);
   const forceRescan = url.searchParams.has('force');
 
-  // Rate limit check — all requests count to prevent abuse
+  // Check cache first — cache hits don't consume rate-limit credit
+  const cacheKey = `scan:${target.toLowerCase()}`;
+  const cached = forceRescan ? null : await env.CACHE.get(cacheKey, 'json') as ScanResult | null;
+
+  if (cached) {
+    const result = { ...cached, _meta: { ...cached._meta, cache_hit: true } };
+    ctx.waitUntil(trackScan(env, { target, cache_hit: true }));
+
+    if (wantsJSON(request)) {
+      return jsonResponse(result, 200, {
+        'X-Cache': 'HIT',
+        'X-RateLimit-Limit': String(RATE_LIMIT),
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'public, max-age=300',
+      });
+    }
+    const cachedNonce = crypto.randomUUID();
+    return htmlResponse(html(result, undefined, { remaining: RATE_LIMIT, limit: RATE_LIMIT }, cachedNonce), 200, cachedNonce);
+  }
+
+  // Rate limit check — only fresh scans count
   const rl = await checkRateLimit(clientIP, env);
   if (!rl.allowed) {
     ctx.waitUntil(trackScan(env, { target, cache_hit: false, rate_limited: true }));
@@ -277,27 +297,6 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
     }
     const rlNonce = crypto.randomUUID();
     return htmlResponse(html(undefined, rateLimitMessage(retryMin, target), { remaining: 0, limit: RATE_LIMIT }, rlNonce), 429, rlNonce);
-  }
-
-  // Check cache (skip on ?force)
-  const cacheKey = `scan:${target.toLowerCase()}`;
-  const cached = forceRescan ? null : await env.CACHE.get(cacheKey, 'json') as ScanResult | null;
-
-  if (cached) {
-    const result = { ...cached, _meta: { ...cached._meta, cache_hit: true } };
-    ctx.waitUntil(trackScan(env, { target, cache_hit: true }));
-
-    if (wantsJSON(request)) {
-      return jsonResponse(result, 200, {
-        'X-Cache': 'HIT',
-        'X-RateLimit-Limit': String(RATE_LIMIT),
-        'X-RateLimit-Remaining': String(rl.remaining),
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, max-age=300',
-      });
-    }
-    const cachedNonce = crypto.randomUUID();
-    return htmlResponse(html(result, undefined, { remaining: rl.remaining, limit: RATE_LIMIT }, cachedNonce), 200, cachedNonce);
   }
 
   // Call probe + enrichment in parallel
