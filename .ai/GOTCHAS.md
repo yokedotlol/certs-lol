@@ -52,7 +52,7 @@
 ## G08 — Git author was leaking personal email
 
 **Symptom:** Commits attributed to personal email instead of project identity.
-**Fix:** Git squash done June 13 — single commit `e69e4af`, author `Yoke <hello@yoke.lol>`, no kpayne@gmail.com in history.
+**Fix:** Git squash done June 13 — single commit `e69e4af`, author `Yoke <hello@yoke.lol>`, personal email scrubbed from history.
 **Don't:** Forget to set `git config user.email hello@yoke.lol` on fresh clones.
 
 ## G09 — Rate limit HTML vs JSON error format
