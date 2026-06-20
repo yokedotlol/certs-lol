@@ -317,19 +317,24 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
 
     if (!probeResp.ok) {
       const errText = await probeResp.text().catch(() => 'Unknown error');
+      const statusCode = probeResp.status === 429 ? 429 : 502;
       ctx.waitUntil(trackScan(env, { target, cache_hit: false, error: true, status: probeResp.status, detail: errText }));
-      return jsonResponse({
-        error: 'Probe error',
-        status: probeResp.status,
-        detail: errText,
-      }, probeResp.status === 429 ? 429 : 502);
+      if (wantsJSON(request)) {
+        return jsonResponse({ error: 'Probe error', status: probeResp.status, detail: errText }, statusCode);
+      }
+      const scanNonce = crypto.randomUUID();
+      return htmlResponse(html(undefined, `Scan failed — ${errText}`, { remaining: rl.remaining, limit: RATE_LIMIT }, scanNonce), statusCode, scanNonce);
     }
 
     const probe = await probeResp.json() as ProbeResult;
 
     if (probe.error) {
       ctx.waitUntil(trackScan(env, { target, cache_hit: false, error: true, status: 502, detail: probe.error }));
-      return jsonResponse({ error: 'Scan failed', detail: probe.error }, 502);
+      if (wantsJSON(request)) {
+        return jsonResponse({ error: 'Scan failed', detail: probe.error }, 502);
+      }
+      const scanNonce = crypto.randomUUID();
+      return htmlResponse(html(undefined, `Scan failed — ${probe.error}`, { remaining: rl.remaining, limit: RATE_LIMIT }, scanNonce), 502, scanNonce);
     }
 
     // Compute days remaining
@@ -405,10 +410,14 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     ctx.waitUntil(trackScan(env, { target, cache_hit: false, error: true, status: 500, detail: message }));
-    if (message.includes('timed out') || message.includes('abort')) {
-      return jsonResponse({ error: 'Scan timed out', detail: 'Probe did not respond within 15s' }, 504);
+    const isTimeout = message.includes('timed out') || message.includes('abort');
+    const errMsg = isTimeout ? 'Scan timed out — probe did not respond within 15s' : `Internal error — ${message}`;
+    const statusCode = isTimeout ? 504 : 500;
+    if (wantsJSON(request)) {
+      return jsonResponse({ error: isTimeout ? 'Scan timed out' : 'Internal error', detail: isTimeout ? 'Probe did not respond within 15s' : message }, statusCode);
     }
-    return jsonResponse({ error: 'Internal error', detail: message }, 500);
+    const scanNonce = crypto.randomUUID();
+    return htmlResponse(html(undefined, errMsg, { remaining: rl.remaining, limit: RATE_LIMIT }, scanNonce), statusCode, scanNonce);
   }
 }
 
