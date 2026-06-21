@@ -538,7 +538,7 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
 <ul>
 <li><strong>60 requests per hour</strong> per IP — rolling window</li>
 <li>Results cached for 6h — add <code>?force</code> to bypass, but force-scans still count</li>
-<li>Cached results also count against the limit (abuse prevention)</li>
+<li>Cached results do not count against the limit</li>
 <li>429 response with <code>Retry-After</code> header when exceeded</li>
 </ul>
 <p><strong>Why 60/hr?</strong> TLS scans are resource-intensive — each request triggers a real probe that makes live TLS connections to the target from a <a href="https://fly.io">Fly.io</a> edge node. This is significantly heavier than DNS lookups, which is why certs.lol's limit is lower than other .lol tools (e.g. <a href="https://ns.lol">ns.lol</a> allows 120/hr).</p>
