@@ -274,7 +274,7 @@ Each scan evaluates TLS configuration against transport encryption requirements 
 
 ### Rate limiting
 
-- 60 scans per hour per IP (all requests count, including cache hits)
+- 60 scans per hour per IP (cached results do not count against the limit)
 - Results cached for 6h
 - `X-RateLimit-Limit` and `X-RateLimit-Remaining` headers on every response
 - 429 response with `Retry-After` and `X-RateLimit-Reset` when exceeded
