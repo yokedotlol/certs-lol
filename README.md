@@ -430,6 +430,16 @@ Not one-command self-hostable yet, but it's MIT — knock yourself out. You'll n
 - **Homebrew:** `brew install yokedotlol/tap/certs`
 - **Source:** https://github.com/yokedotlol/certs-lol
 
+## Family
+
+Part of the [.lol developer tools](https://yoke.lol) family:
+
+- **[yoke.lol](https://yoke.lol)** — Full domain intelligence
+- **[certs.lol](https://certs.lol)** — TLS/SSL certificate analysis ← you are here
+- **[ns.lol](https://ns.lol)** — DNS toolkit
+- **[xhttp.lol](https://xhttp.lol)** — HTTP response debugger
+- **[vrfy.lol](https://vrfy.lol)** — Email validation
+
 ## License
 
 MIT
