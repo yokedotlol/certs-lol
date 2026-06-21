@@ -137,8 +137,13 @@ h1 .t{color:var(--accent)}
 .err-ts{color:var(--muted);white-space:nowrap;min-width:60px}
 .err-target{color:var(--accent);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
 .err-detail{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem}
+footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted);text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
 footer a{color:var(--accent);text-decoration:none}
+.footer-links{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+.footer-tagline{font-size:10px;color:var(--muted);margin-bottom:2px}
+.footer-family{display:flex;justify-content:center;gap:16px}
+.footer-family a{color:var(--muted);text-decoration:none;transition:color .2s}
+.footer-family a:hover{color:var(--accent)}
 @media(max-width:600px){.dep-url{display:none}.page{padding:1rem}.err-row{flex-wrap:wrap}}
 </style></head><body>
 <div class="page">
@@ -176,8 +181,9 @@ footer a{color:var(--accent);text-decoration:none}
 ${errorsHtml}
 
 <footer>
-  <span><a href="/">certs.lol</a> · <a href="/about">about</a> · <a href="/cli">cli</a> · <a href="/api/docs">api</a></span>
-  <span><a href="https://ns.lol">ns.lol</a> · <a href="https://yoke.lol">yoke.lol</a></span>
+  <div class="footer-links"><a href="/">certs.lol</a><a href="/about">about</a><a href="/cli">cli</a><a href="/api/docs">api</a><a href="https://github.com/yokedotlol/certs-lol">github</a><a href="/privacy">privacy</a><a href="/terms">terms</a></div>
+  <div class="footer-tagline">Part of the <a href="https://yoke.lol/tools">.lol tools</a></div>
+  <div class="footer-family"><a href="https://yoke.lol">yoke</a><a href="https://ns.lol">ns</a><a href="https://xhttp.lol">xhttp</a><a href="https://vrfy.lol">vrfy</a></div>
 </footer>
 </div></body></html>`;
 
