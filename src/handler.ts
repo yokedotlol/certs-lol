@@ -770,7 +770,7 @@ td:first-child{color:#d8d8e0;white-space:nowrap}
 <h1>certs CLI</h1>
 <p>Run locally without us. No middleman. No rate limits. Same engine as certs.lol.</p>
 <p><span class="badge">MIT</span><span class="badge">Go</span><span class="badge">&lt;5s scans</span></p>
-<p style="margin-top:0.75rem;padding:8px 12px;background:#111116;border-left:3px solid #38d9a9;border-radius:4px;font-size:12px;color:#8e8e9a">🔒 <strong style="color:#38d9a9">Privacy:</strong> This CLI never contacts certs.lol servers. All scans connect directly from your machine to the target domain. <a href="https://github.com/yokedotlol/certs-lol" style="color:#9b8afb">You can always self-host if you need privacy.</a></p>
+<p style="margin-top:0.75rem;padding:8px 12px;background:#111116;border-left:3px solid #38d9a9;border-radius:4px;font-size:12px;color:#8e8e9a">🔒 <strong style="color:#38d9a9">Privacy:</strong> This CLI never contacts certs.lol servers. TLS scans connect directly from your machine to the target domain. Enrichment checks also query <code>hstspreload.org</code> and Cloudflare DoH for DNSSEC/CAA/DANE data — use <code>--probe-only</code> to skip these. <a href="https://github.com/yokedotlol/certs-lol" style="color:#9b8afb">You can always self-host if you need privacy.</a></p>
 
 <h2>Install</h2>
 <pre><code># Homebrew
