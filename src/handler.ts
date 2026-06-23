@@ -235,6 +235,12 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
     }));
   }
 
+  if (path === '/bimi-logo.svg') {
+    return addHeaders(new Response(bimiSvg(), {
+      headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=604800' },
+    }));
+  }
+
   if (path === '/favicon.ico' || path === '/favicon.svg') {
     return addHeaders(new Response(faviconSvg(), {
       headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' },
@@ -434,7 +440,27 @@ function ogImagePng(): Uint8Array {
 }
 
 function faviconSvg(): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">🔒</text></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#08080c"/>
+  <text x="16" y="24" font-family="monospace" font-weight="500" font-size="22"
+        fill="#e1dbfd" text-anchor="middle">c</text>
+</svg>`;
+}
+
+function bimiSvg(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny-ps"
+     viewBox="0 0 512 512" width="512" height="512">
+  <title>certs BIMI Logo</title>
+  <rect width="512" height="512" fill="#0a0a0f"/>
+  <text x="175" y="330" font-family="monospace" font-weight="500" font-size="280"
+        fill="#9b8afb" opacity="0.15">c</text>
+  <text x="175" y="330" font-family="monospace" font-weight="500" font-size="280"
+        fill="#9b8afb" opacity="0.25">c</text>
+  <text x="175" y="330" font-family="monospace" font-weight="500" font-size="280"
+        fill="#e1dbfd">c</text>
+  <rect x="310" y="135" width="80" height="200" rx="2" fill="#9b8afb"/>
+</svg>`;
 }
 
 function securityTxt(): string {
