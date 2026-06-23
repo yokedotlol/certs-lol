@@ -206,6 +206,35 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
     }));
   }
 
+  // ARD ai-catalog.json — Agentic Resource Discovery
+  if (path === '/.well-known/ai-catalog.json') {
+    const catalog = {
+      specVersion: "1.0",
+      host: {
+        displayName: "certs.lol",
+        identifier: "did:web:certs.lol",
+        documentationUrl: "https://certs.lol/api/docs",
+      },
+      entries: [
+        {
+          identifier: "urn:air:certs.lol:api:ssl-analysis",
+          displayName: "certs.lol SSL/TLS Analysis API",
+          type: "application/openapi+json",
+          url: "https://certs.lol/api/docs",
+          description: "Free SSL/TLS certificate analysis API — chain validation, grade, protocols, ciphers, HSTS, CT logs. No auth required.",
+          representativeQueries: [
+            "check the SSL certificate for example.com",
+            "what TLS protocols does a domain support",
+            "is a domain's certificate chain valid",
+          ],
+        },
+      ],
+    };
+    return addHeaders(new Response(JSON.stringify(catalog, null, 2), {
+      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=86400' },
+    }));
+  }
+
   if (path === '/privacy') {
     return htmlResponse(privacyPage());
   }
