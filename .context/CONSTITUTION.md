@@ -110,7 +110,7 @@ Built with goreleaser, distributed via Homebrew tap (`yokedotlol/tap/certs`) and
 - **CLI:** `cli/` — Go binary with scan, compare, mx, assert, bulk subcommands
 - **CLI assertions:** `cli/assert/` — assertion rule engine and built-in profiles
 
-## .ai/ Maintenance Protocol
+## .context/ Maintenance Protocol
 
 These files are maintained by AI agents **with human approval**:
 

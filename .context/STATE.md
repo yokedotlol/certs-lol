@@ -1,6 +1,6 @@
 # certs.lol — Current State
 
-> Updated more freely than other .ai/ files. Reflects current project status.
+> Updated more freely than other .context/ files. Reflects current project status.
 
 ## Overview
 
