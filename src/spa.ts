@@ -42,6 +42,7 @@ export function html(data?: ScanResult, error?: string, rl?: RateLimitInfo, nonc
 <meta name="twitter:description" content="${esc(desc)}">
 <meta name="twitter:image" content="https://certs.lol/og.png">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="canonical" href="https://certs.lol${data ? '/' + esc(data.target) : ''}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
