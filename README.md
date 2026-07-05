@@ -32,7 +32,7 @@ Same URL, content-negotiated: `curl` gets JSON, browsers get a formatted report.
 
 ## CLI
 
-The `certs` CLI runs the same Go TLS engine locally — no API calls, no rate limits, full control.
+The `certs` CLI runs the same Go TLS engine locally — no rate limits, full control. TLS scans connect directly from your machine to the target. Enrichment checks also query `hstspreload.org` and Cloudflare DoH for DNSSEC/CAA/DANE data — use `--probe-only` to skip these.
 
 ### Install
 
