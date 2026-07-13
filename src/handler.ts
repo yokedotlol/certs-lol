@@ -800,7 +800,7 @@ ${metaTags('Privacy Policy', 'certs.lol privacy policy. We collect nothing.')}
 <p>Cloudflare processes requests as our CDN and compute provider. Their standard edge logs (IP, URL, timestamp) are subject to <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare's privacy policy</a>. We do not access, store, or process these logs.</p>
 
 <h2>Rate limiting</h2>
-<p>We store a hashed IP counter in Cloudflare KV for rate limiting purposes. These counters expire automatically after 1 hour and contain no personally identifiable information beyond an IP-derived key.</p>
+<p>We store an IP-derived counter in a Cloudflare Durable Object for rate limiting. These counters expire automatically and contain no personally identifiable information beyond a hashed IP key.</p>
 
 <h2>Scan data</h2>
 <p>TLS scan results are cached for 6 hours to improve performance. Cached data contains only publicly observable TLS configuration — no private information.</p>
