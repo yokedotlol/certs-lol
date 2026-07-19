@@ -425,8 +425,27 @@ function renderResult(d: ScanResult, hook: string[], isIP: boolean): string {
       row('dnssec', dns.dnssec ? '✓ signed' : '✗ unsigned', dns.dnssec ? 'ok' : ''),
       row('caa', dns.caa.length ? dns.caa.join(', ') : '—', dns.caa.length ? 'ok' : 'off'),
       row('dane / tlsa', dns.dane_tlsa || '—', dns.dane_tlsa ? 'ok' : 'off'),
+      row('smtp dane', dns.smtp_tlsa || '—', dns.smtp_tlsa ? 'ok' : 'off'),
     ];
     s += section('DNS Security', dnsRows);
+  }
+
+  // DANCE readiness (domains only)
+  if (!isIP && d.dance) {
+    const dance = d.dance;
+    const statusIcon = dance.status === 'ready' ? '✓' : dance.status === 'partial' ? '◐' : '✗';
+    const statusClass = dance.status === 'ready' ? 'ok' : dance.status === 'partial' ? 'warn' : '';
+    const danceRows = [
+      row('dance readiness', `${statusIcon} ${dance.status}`, statusClass),
+      row('', dance.detail, 'off'),
+      row('dnssec', dance.checks.dnssec ? '✓' : '✗', dance.checks.dnssec ? 'ok' : 'err'),
+      row('tls 1.3', dance.checks.tls13 ? '✓' : '✗', dance.checks.tls13 ? 'ok' : 'err'),
+      row('dane-ee (usage 3)', dance.checks.dane_ee ? '✓' : '—', dance.checks.dane_ee ? 'ok' : 'off'),
+      row('dane-ta (usage 2)', dance.checks.dane_ta ? '✓' : '—', dance.checks.dane_ta ? 'ok' : 'off'),
+      row('smtp dane', dance.checks.smtp_tlsa ? '✓' : '—', dance.checks.smtp_tlsa ? 'ok' : 'off'),
+      row('', 'draft-ietf-dance-client-auth (Proposed Standard)', 'off'),
+    ];
+    s += section('DANCE', danceRows);
   }
 
   // Compliance

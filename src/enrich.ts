@@ -17,10 +17,21 @@ export interface HTTP3Info {
   alt_svc: string | null;
 }
 
+export interface ParsedTLSA {
+  port: number;
+  protocol: string;
+  usage: number;
+  usage_name: string;
+  selector: number;
+  matching_type: number;
+}
+
 export interface DNSSecurityInfo {
   dnssec: boolean;
   caa: string[];
   dane_tlsa: string | null;
+  smtp_tlsa: string | null;
+  parsed_tlsa: ParsedTLSA[];
 }
 
 export interface EnrichmentResult {
@@ -128,18 +139,51 @@ function defaultHTTP3(): HTTP3Info {
 
 // ─── DNS Security (DNSSEC + CAA + DANE via Cloudflare DoH) ──────────
 
+const TLSA_USAGE_NAMES: Record<number, string> = {
+  0: 'PKIX-TA',
+  1: 'PKIX-EE',
+  2: 'DANE-TA',
+  3: 'DANE-EE',
+};
+
 async function fetchDNSSecurity(domain: string): Promise<DNSSecurityInfo> {
-  const [dnssec, caa, dane] = await Promise.all([
+  const [dnssec, caa, dane, smtpDane] = await Promise.all([
     checkDNSSEC(domain),
     checkCAA(domain),
     checkDANE(domain),
+    checkSMTPDANE(domain),
   ]);
 
-  return { dnssec, caa, dane_tlsa: dane };
+  // Parse TLSA records for structured usage data
+  const parsedTlsa: ParsedTLSA[] = [];
+  if (dane.records.length > 0) {
+    for (const rec of dane.records) {
+      const parsed = parseTLSARecord(rec);
+      if (parsed) {
+        parsedTlsa.push({ port: 443, protocol: 'tcp', ...parsed });
+      }
+    }
+  }
+  if (smtpDane.records.length > 0) {
+    for (const rec of smtpDane.records) {
+      const parsed = parseTLSARecord(rec);
+      if (parsed) {
+        parsedTlsa.push({ port: 25, protocol: 'tcp', ...parsed });
+      }
+    }
+  }
+
+  return {
+    dnssec,
+    caa,
+    dane_tlsa: dane.raw,
+    smtp_tlsa: smtpDane.raw,
+    parsed_tlsa: parsedTlsa,
+  };
 }
 
 function defaultDNSSecurity(): DNSSecurityInfo {
-  return { dnssec: false, caa: [], dane_tlsa: null };
+  return { dnssec: false, caa: [], dane_tlsa: null, smtp_tlsa: null, parsed_tlsa: [] };
 }
 
 async function checkDNSSEC(domain: string): Promise<boolean> {
@@ -216,7 +260,12 @@ function parseCAAData(raw: string): string | null {
   return `${tag} ${value}`;
 }
 
-async function checkDANE(domain: string): Promise<string | null> {
+interface TLSACheckResult {
+  raw: string | null;
+  records: string[];
+}
+
+async function checkDANE(domain: string): Promise<TLSACheckResult> {
   try {
     const resp = await fetch(
       `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(`_443._tcp.${domain}`)}&type=TLSA`,
@@ -225,15 +274,79 @@ async function checkDANE(domain: string): Promise<string | null> {
         signal: AbortSignal.timeout(5000),
       },
     );
-    if (!resp.ok) return null;
+    if (!resp.ok) return { raw: null, records: [] };
     const data = await resp.json() as { Answer?: Array<{ type: number; data: string }> };
-    if (!data.Answer) return null;
+    if (!data.Answer) return { raw: null, records: [] };
 
     const tlsa = data.Answer.filter(a => a.type === 52);
-    if (tlsa.length === 0) return null;
+    if (tlsa.length === 0) return { raw: null, records: [] };
 
-    return tlsa.map(a => a.data).join('; ');
+    return {
+      raw: tlsa.map(a => a.data).join('; '),
+      records: tlsa.map(a => a.data),
+    };
   } catch {
-    return null;
+    return { raw: null, records: [] };
   }
+}
+
+async function checkSMTPDANE(domain: string): Promise<TLSACheckResult> {
+  try {
+    const resp = await fetch(
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(`_25._tcp.${domain}`)}&type=TLSA`,
+      {
+        headers: { 'Accept': 'application/dns-json' },
+        signal: AbortSignal.timeout(5000),
+      },
+    );
+    if (!resp.ok) return { raw: null, records: [] };
+    const data = await resp.json() as { Answer?: Array<{ type: number; data: string }> };
+    if (!data.Answer) return { raw: null, records: [] };
+
+    const tlsa = data.Answer.filter(a => a.type === 52);
+    if (tlsa.length === 0) return { raw: null, records: [] };
+
+    return {
+      raw: tlsa.map(a => a.data).join('; '),
+      records: tlsa.map(a => a.data),
+    };
+  } catch {
+    return { raw: null, records: [] };
+  }
+}
+
+/**
+ * Parse a TLSA record's RDATA to extract usage, selector, and matching type.
+ * DoH returns TLSA data in either presentation format ("3 1 1 hex...") or
+ * wire format ("\# NN hexbytes...").
+ */
+function parseTLSARecord(data: string): { usage: number; usage_name: string; selector: number; matching_type: number } | null {
+  if (!data) return null;
+
+  // Try presentation format: "3 1 1 d2abde240d7cd3ee..."
+  const parts = data.trim().split(/\s+/);
+  if (parts.length >= 3) {
+    const usage = parseInt(parts[0], 10);
+    const selector = parseInt(parts[1], 10);
+    const matching_type = parseInt(parts[2], 10);
+    if (!isNaN(usage) && !isNaN(selector) && !isNaN(matching_type) && usage >= 0 && usage <= 3) {
+      return { usage, usage_name: TLSA_USAGE_NAMES[usage] || `usage-${usage}`, selector, matching_type };
+    }
+  }
+
+  // Try wire format: "\# NN HH HH HH ..."
+  const wireMatch = data.match(/^\\#\s+\d+\s+(.+)$/);
+  if (wireMatch) {
+    const hexStr = wireMatch[1].replace(/\s+/g, '');
+    if (hexStr.length >= 6) {
+      const usage = parseInt(hexStr.substring(0, 2), 16);
+      const selector = parseInt(hexStr.substring(2, 4), 16);
+      const matching_type = parseInt(hexStr.substring(4, 6), 16);
+      if (usage >= 0 && usage <= 3) {
+        return { usage, usage_name: TLSA_USAGE_NAMES[usage] || `usage-${usage}`, selector, matching_type };
+      }
+    }
+  }
+
+  return null;
 }

@@ -1,8 +1,33 @@
 import { handleRequest } from './handler';
-import type { HSTSInfo, HTTP3Info, DNSSecurityInfo } from './enrich';
+import type { HSTSInfo, HTTP3Info, DNSSecurityInfo, ParsedTLSA } from './enrich';
 import type { ComplianceResult } from './compliance';
 
 export { RateLimiterDO } from './rate-limiter';
+
+/** DANCE (DANE Authentication for Network Clients Everywhere) readiness */
+export interface DANCEInfo {
+  /** Overall readiness status */
+  status: 'ready' | 'partial' | 'not-ready';
+  /** Human-readable summary */
+  detail: string;
+  /** Individual prerequisite checks */
+  checks: {
+    /** DNSSEC enabled — required for DANE trust chain */
+    dnssec: boolean;
+    /** TLS 1.3 supported — required by DANCE spec */
+    tls13: boolean;
+    /** Has DANE TLSA records at _443._tcp (server-side DANE) */
+    dane_tlsa: boolean;
+    /** Has DANE-EE (usage 3) TLSA records */
+    dane_ee: boolean;
+    /** Has DANE-TA (usage 2) TLSA records */
+    dane_ta: boolean;
+    /** Has SMTP DANE TLSA records at _25._tcp */
+    smtp_tlsa: boolean;
+  };
+  /** Parsed TLSA records with usage types */
+  tlsa_usage: ParsedTLSA[];
+}
 
 export interface Env {
   CACHE: KVNamespace;
@@ -65,6 +90,7 @@ export interface ScanResult extends ProbeResult {
   hsts: HSTSInfo;
   http3: HTTP3Info;
   dns_security: DNSSecurityInfo | null;
+  dance: DANCEInfo | null;
   compliance?: ComplianceResult[];
   _meta: {
     version: string;

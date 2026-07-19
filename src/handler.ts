@@ -1,8 +1,9 @@
-import type { Env, ProbeResult, ScanResult } from './worker';
+import type { Env, ProbeResult, ScanResult, DANCEInfo } from './worker';
 import { html } from './spa';
 import { trackScan, handleUsage } from './usage';
 import { renderStatusPage } from './status';
 import { enrich } from './enrich';
+import type { DNSSecurityInfo } from './enrich';
 import { evaluateCompliance } from './compliance';
 
 const CACHE_TTL = 21600; // 6 hours
@@ -111,6 +112,74 @@ function htmlResponse(body: string, status = 200, nonce?: string): Response {
     }),
     nonce ? { 'Content-Security-Policy': cspWithNonce(nonce) } : undefined,
   );
+}
+
+/**
+ * Compute DANCE (DANE Authentication for Network Clients Everywhere) readiness.
+ * Combines DNS security data (DNSSEC, TLSA records) with TLS probe data (protocol support)
+ * to assess whether a domain has the infrastructure for DANE-based mutual TLS client auth.
+ *
+ * Reference: draft-ietf-dance-client-auth-12 (IESG-approved, Proposed Standard)
+ */
+function computeDANCE(protocols: string[], dnsSec: DNSSecurityInfo | null): DANCEInfo | null {
+  if (!dnsSec) return null;
+
+  const tls13 = protocols.some(p => p === 'TLS 1.3');
+  const hasDaneTlsa = !!dnsSec.dane_tlsa;
+  const hasSmtpTlsa = !!dnsSec.smtp_tlsa;
+  const hasDaneEE = dnsSec.parsed_tlsa.some(t => t.usage === 3);
+  const hasDaneTA = dnsSec.parsed_tlsa.some(t => t.usage === 2);
+
+  const checks = {
+    dnssec: dnsSec.dnssec,
+    tls13,
+    dane_tlsa: hasDaneTlsa,
+    dane_ee: hasDaneEE,
+    dane_ta: hasDaneTA,
+    smtp_tlsa: hasSmtpTlsa,
+  };
+
+  // Determine readiness level
+  // Ready: DNSSEC + TLS 1.3 + DANE TLSA with usage 2 or 3
+  // Partial: Some prerequisites met (e.g. DNSSEC + TLS 1.3 but no DANE records, or DANE without DNSSEC)
+  // Not ready: Missing both DNSSEC and DANE
+  let status: DANCEInfo['status'];
+  let detail: string;
+
+  const hasDaneUsage = hasDaneEE || hasDaneTA;
+
+  if (dnsSec.dnssec && tls13 && hasDaneTlsa && hasDaneUsage) {
+    status = 'ready';
+    const usages: string[] = [];
+    if (hasDaneEE) usages.push('DANE-EE');
+    if (hasDaneTA) usages.push('DANE-TA');
+    detail = `DANCE-ready: DNSSEC + TLS 1.3 + ${usages.join('/')} TLSA`;
+    if (hasSmtpTlsa) detail += ' + SMTP DANE';
+  } else if (dnsSec.dnssec && tls13) {
+    status = 'partial';
+    if (hasDaneTlsa) {
+      detail = 'Infrastructure present but TLSA records use PKIX-only usage types';
+    } else {
+      detail = 'DNSSEC + TLS 1.3 present; no DANE TLSA records published';
+    }
+  } else if (dnsSec.dnssec || tls13 || hasDaneTlsa) {
+    status = 'partial';
+    const missing: string[] = [];
+    if (!dnsSec.dnssec) missing.push('DNSSEC');
+    if (!tls13) missing.push('TLS 1.3');
+    if (!hasDaneTlsa) missing.push('DANE TLSA');
+    detail = `Missing: ${missing.join(', ')}`;
+  } else {
+    status = 'not-ready';
+    detail = 'No DNSSEC, TLS 1.3, or DANE TLSA records';
+  }
+
+  return {
+    status,
+    detail,
+    checks,
+    tlsa_usage: dnsSec.parsed_tlsa,
+  };
 }
 
 export async function handleRequest(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -446,6 +515,7 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
       hsts: enrichData.hsts,
       http3: enrichData.http3,
       dns_security: targetIsIP ? null : enrichData.dns_security,
+      dance: targetIsIP ? null : computeDANCE(probe.protocols, enrichData.dns_security),
       compliance: evaluateCompliance({
         protocols: probe.protocols,
         ciphers: probe.ciphers,
@@ -599,7 +669,8 @@ No authentication required. Rate limit: 60 requests/hour per IP. Results cached 
 - ECH: Encrypted Client Hello
 - HSTS: max-age, includeSubDomains, preload list status
 - HTTP/2 and HTTP/3 (QUIC)
-- DNS security: DNSSEC, CAA, DANE/TLSA
+- DNS security: DNSSEC, CAA, DANE/TLSA, SMTP DANE
+- DANCE readiness: DANE-based mutual TLS client authentication (draft-ietf-dance-client-auth)
 - Compliance: PCI DSS 4.0, NIST SP 800-52r2, HIPAA transport requirements
 
 ## Related
@@ -731,7 +802,19 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
   "dns_security": {
     "dnssec": true,
     "caa": ["issue digicert.com", "issue letsencrypt.org"],
-    "dane_tlsa": null
+    "dane_tlsa": null,
+    "smtp_tlsa": null,
+    "parsed_tlsa": []
+  },
+  "dance": {
+    "status": "partial",
+    "detail": "DNSSEC + TLS 1.3 present; no DANE TLSA records published",
+    "checks": {
+      "dnssec": true, "tls13": true,
+      "dane_tlsa": false, "dane_ee": false,
+      "dane_ta": false, "smtp_tlsa": false
+    },
+    "tlsa_usage": []
   },
   "compliance": [
     {
