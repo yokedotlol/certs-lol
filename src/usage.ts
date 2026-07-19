@@ -3,8 +3,9 @@ import type { Env } from './worker';
 // Keys for usage counters in KV
 const STATS_KEY = 'stats:global';
 const STATS_DAILY_PREFIX = 'stats:daily:';
-const TOP_DOMAINS_KEY = 'stats:top-domains';
 const ERRORS_KEY = 'stats:errors';
+const LEGACY_TOP_DOMAINS_KEY = 'stats:top-domains';
+const LEGACY_CLEANUP_KEY = 'stats:privacy-cleanup-v1';
 
 interface GlobalStats {
   total_scans: number;
@@ -24,19 +25,25 @@ interface DailyStats {
   errors: number;
 }
 
-interface TopDomains {
-  [domain: string]: number;
-}
-
 interface ErrorLog {
   ts: string;
-  target: string;
   status: number;
   detail: string;
 }
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+export async function cleanupLegacyTargetStats(env: Env): Promise<void> {
+  const done = await env.CACHE.get(LEGACY_CLEANUP_KEY);
+  if (done) return;
+
+  await Promise.all([
+    env.CACHE.delete(LEGACY_TOP_DOMAINS_KEY),
+    env.CACHE.delete(ERRORS_KEY),
+  ]);
+  await env.CACHE.put(LEGACY_CLEANUP_KEY, '1');
 }
 
 export async function trackScan(env: Env, event: {
@@ -48,6 +55,8 @@ export async function trackScan(env: Env, event: {
   detail?: string;
 }): Promise<void> {
   try {
+    await cleanupLegacyTargetStats(env);
+
     // Global stats
     const raw = await env.CACHE.get(STATS_KEY);
     const stats: GlobalStats = raw ? JSON.parse(raw) : {
@@ -80,25 +89,12 @@ export async function trackScan(env: Env, event: {
     else daily.cache_misses++;
 
     await env.CACHE.put(dailyKey, JSON.stringify(daily), { expirationTtl: 86400 * 30 }); // 30d retention
-
-    // Top domains (skip IPs)
-    if (!event.rate_limited && !event.target.match(/^\d+\.\d+\.\d+\.\d+$/) && !event.target.includes(':')) {
-      const topRaw = await env.CACHE.get(TOP_DOMAINS_KEY);
-      const top: TopDomains = topRaw ? JSON.parse(topRaw) : {};
-      top[event.target] = (top[event.target] || 0) + 1;
-
-      // Keep only top 100
-      const sorted = Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 100);
-      await env.CACHE.put(TOP_DOMAINS_KEY, JSON.stringify(Object.fromEntries(sorted)));
-    }
-
     // Error log (keep last 50)
     if (event.error && event.detail) {
       const errRaw = await env.CACHE.get(ERRORS_KEY);
       const errors: ErrorLog[] = errRaw ? JSON.parse(errRaw) : [];
       errors.unshift({
         ts: new Date().toISOString(),
-        target: event.target,
         status: event.status || 0,
         detail: event.detail,
       });
@@ -135,9 +131,10 @@ export async function handleUsage(request: Request, env: Env): Promise<Response>
     });
   }
 
-  const [globalRaw, topRaw, errRaw] = await Promise.all([
+  await cleanupLegacyTargetStats(env);
+
+  const [globalRaw, errRaw] = await Promise.all([
     env.CACHE.get(STATS_KEY),
-    env.CACHE.get(TOP_DOMAINS_KEY),
     env.CACHE.get(ERRORS_KEY),
   ]);
 
@@ -145,7 +142,6 @@ export async function handleUsage(request: Request, env: Env): Promise<Response>
     total_scans: 0, cache_hits: 0, cache_misses: 0,
     rate_limited: 0, errors: 0, last_scan: null,
   };
-  const topDomains: TopDomains = topRaw ? JSON.parse(topRaw) : {};
   const errors: ErrorLog[] = errRaw ? JSON.parse(errRaw) : [];
 
   // Get last 7 days of daily stats
@@ -167,7 +163,6 @@ export async function handleUsage(request: Request, env: Env): Promise<Response>
     return new Response(JSON.stringify({
       global: stats,
       daily: dailyStats,
-      top_domains: Object.entries(topDomains).sort((a, b) => b[1] - a[1]).slice(0, 25),
       recent_errors: errors.slice(0, 10),
     }, null, 2) + '\n', {
       headers: { 'Content-Type': 'application/json' },
@@ -178,19 +173,12 @@ export async function handleUsage(request: Request, env: Env): Promise<Response>
   const hitRate = stats.total_scans > 0
     ? ((stats.cache_hits / stats.total_scans) * 100).toFixed(1)
     : '0';
-
-  const topRows = Object.entries(topDomains)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 20)
-    .map(([d, c]) => `<div class="r"><span class="k">${esc(d)}</span><span class="v">${c}</span></div>`)
-    .join('');
-
   const dailyRows = dailyStats.map(d =>
     `<div class="r"><span class="k">${d.date}</span><span class="v">${d.scans} scans · ${d.cache_hits} hits · ${d.cache_misses} miss · ${d.rate_limited} rl · ${d.errors} err</span></div>`
   ).join('');
 
   const errorRows = errors.slice(0, 10).map(e =>
-    `<div class="r"><span class="k" style="width:170px">${e.ts.slice(0, 19)}</span><span class="v">${esc(e.target)} → ${e.status} ${esc(e.detail).slice(0, 60)}</span></div>`
+    `<div class="r"><span class="k" style="width:170px">${e.ts.slice(0, 19)}</span><span class="v">${e.status} ${esc(e.detail).slice(0, 80)}</span></div>`
   ).join('');
 
   return new Response(`<!DOCTYPE html><html lang="en"><head>
@@ -232,12 +220,6 @@ h1 .t{color:#9b8afb}
   <div class="sec-label">Last 7 Days</div>
   ${dailyRows}
 </div>
-
-<div class="section">
-  <div class="sec-label">Top Domains</div>
-  ${topRows || '<div class="r"><span class="v" style="color:#5c5c6b">no scans yet</span></div>'}
-</div>
-
 ${errors.length > 0 ? `<div class="section">
   <div class="sec-label">Recent Errors</div>
   ${errorRows}

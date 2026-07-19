@@ -870,14 +870,14 @@ function privacyPage(): string {
   return `<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Privacy — certs.lol</title>
-${metaTags('Privacy Policy', 'certs.lol privacy policy. We collect nothing.')}
+${metaTags('Privacy Policy', 'certs.lol privacy policy. No personal data, no third-party tracking.')}
 <style>${baseCSS()}</style></head><body>
 <div class="page">
 <h1>Privacy Policy</h1>
-<p class="muted">Last updated: June 2026</p>
+<p class="muted">Last updated: July 2026</p>
 
 <h2>What we collect</h2>
-<p>Nothing. certs.lol has no accounts, no cookies, no analytics, no tracking pixels, and no third-party scripts.</p>
+<p>certs.lol does not collect personal data. There are no accounts, cookies, third-party analytics, tracking pixels, or third-party scripts.</p>
 
 <h2>Server logs</h2>
 <p>Cloudflare processes requests as our CDN and compute provider. Their standard edge logs (IP, URL, timestamp) are subject to <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare's privacy policy</a>. We do not access, store, or process these logs.</p>
@@ -886,7 +886,10 @@ ${metaTags('Privacy Policy', 'certs.lol privacy policy. We collect nothing.')}
 <p>We store an IP-derived counter in a Cloudflare Durable Object for rate limiting. These counters expire automatically and contain no personally identifiable information beyond a hashed IP key.</p>
 
 <h2>Scan data</h2>
-<p>TLS scan results are cached for 6 hours to improve performance. Cached data contains only publicly observable TLS configuration — no private information.</p>
+<p>TLS scan results are cached for 6 hours to improve performance. Cached data is keyed by the submitted target and contains only publicly observable TLS configuration — no private information.</p>
+
+<h2>Operational counters</h2>
+<p>We keep aggregate counters for service health: scan totals, cache hits and misses, errors, and rate-limit events. These counters do not include requested domains, IP addresses, or per-request identifiers.</p>
 
 <h2>Contact</h2>
 <p>Questions? <a href="mailto:hello@certs.lol">hello@certs.lol</a></p>

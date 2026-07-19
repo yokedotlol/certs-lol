@@ -7,6 +7,7 @@
 // unless we have evidence of actual outages.
 
 import type { Env } from './worker';
+import { cleanupLegacyTargetStats } from './usage';
 
 const STATS_KEY = 'stats:global';
 const STATS_DAILY_PREFIX = 'stats:daily:';
@@ -32,7 +33,6 @@ interface DailyStats {
 
 interface ErrorLog {
   ts: string;
-  target: string;
   status: number;
   detail: string;
 }
@@ -51,6 +51,8 @@ function timeAgo(iso: string | null): string {
 }
 
 export async function renderStatusPage(env: Env): Promise<Response> {
+  await cleanupLegacyTargetStats(env);
+
   const [globalRaw, errRaw] = await Promise.all([
     env.CACHE.get(STATS_KEY),
     env.CACHE.get(ERRORS_KEY),
@@ -94,7 +96,7 @@ export async function renderStatusPage(env: Env): Promise<Response> {
     ? `<div class="section">
         <div class="sec-label">Recent Scan Errors</div>
         <div class="err-note">Normal operation — invalid input, unreachable targets, timeouts.</div>
-        ${recentErrors.map(e => `<div class="err-row"><span class="err-ts">${timeAgo(e.ts)}</span><span class="err-target">${esc(e.target)}</span><span class="err-detail">${esc(e.detail).slice(0, 60)}</span></div>`).join('')}
+        ${recentErrors.map(e => `<div class="err-row"><span class="err-ts">${timeAgo(e.ts)}</span><span class="err-detail">${e.status} ${esc(e.detail).slice(0, 80)}</span></div>`).join('')}
       </div>`
     : '';
 
@@ -135,7 +137,6 @@ h1 .t{color:var(--accent)}
 .err-note{font-size:0.75rem;color:var(--muted);margin-bottom:0.75rem;font-style:italic}
 .err-row{font-family:'JetBrains Mono',monospace;font-size:0.7rem;padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:0.75rem;align-items:baseline}
 .err-ts{color:var(--muted);white-space:nowrap;min-width:60px}
-.err-target{color:var(--accent);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
 .err-detail{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted);text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
 footer a{color:var(--accent);text-decoration:none}
