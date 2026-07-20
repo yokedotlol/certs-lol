@@ -5,7 +5,7 @@ const STATS_KEY = 'stats:global';
 const STATS_DAILY_PREFIX = 'stats:daily:';
 const ERRORS_KEY = 'stats:errors';
 const LEGACY_TOP_DOMAINS_KEY = 'stats:top-domains';
-const LEGACY_CLEANUP_KEY = 'stats:privacy-cleanup-v1';
+const LEGACY_CLEANUP_KEY = 'stats:privacy-cleanup-v2';
 
 interface GlobalStats {
   total_scans: number;
@@ -29,6 +29,14 @@ interface ErrorLog {
   ts: string;
   status: number;
   detail: string;
+}
+
+
+function scrubIdentifier(value: string): string {
+  return value
+    .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, '[ip]')
+    .replace(/(?<![A-Za-z0-9-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,63}(?![A-Za-z0-9-])/g, '[domain]')
+    .replace(/\b[0-9a-fA-F:]{2,}:[0-9a-fA-F:.]{2,}\b/g, '[ip]');
 }
 
 function today(): string {
@@ -96,7 +104,7 @@ export async function trackScan(env: Env, event: {
       errors.unshift({
         ts: new Date().toISOString(),
         status: event.status || 0,
-        detail: event.detail,
+        detail: scrubIdentifier(event.detail),
       });
       await env.CACHE.put(ERRORS_KEY, JSON.stringify(errors.slice(0, 50)));
     }
