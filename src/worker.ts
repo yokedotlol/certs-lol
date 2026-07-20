@@ -35,6 +35,8 @@ export interface Env {
   FLY_AUTH_SECRET: string;
   PROBE_URL: string;
   RATE_LIMITER: DurableObjectNamespace;
+  /** Salt for hashing client IPs before rate-limiter storage. */
+  IP_HASH_SALT?: string;
   /** Yoke domain intelligence service binding (.lol family) */
   YOKE?: Fetcher;
   /** Shared key for .lol family service bindings */
