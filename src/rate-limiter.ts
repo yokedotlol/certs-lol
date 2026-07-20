@@ -12,7 +12,7 @@ interface RateLimitState {
   count: number;
 }
 
-export class RateLimiterDO implements DurableObject {
+export class RateLimiterV2DO implements DurableObject {
   private state: DurableObjectState;
 
   constructor(state: DurableObjectState) {
