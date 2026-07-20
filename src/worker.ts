@@ -2,7 +2,7 @@ import { handleRequest } from './handler';
 import type { HSTSInfo, HTTP3Info, DNSSecurityInfo, ParsedTLSA } from './enrich';
 import type { ComplianceResult } from './compliance';
 
-export { RateLimiterV2DO, RateLimiterV2DO as RateLimiterDO } from './rate-limiter';
+export { RateLimiterV2DO } from './rate-limiter';
 
 /** DANCE (DANE Authentication for Network Clients Everywhere) readiness */
 export interface DANCEInfo {

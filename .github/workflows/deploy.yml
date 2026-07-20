@@ -49,6 +49,10 @@ jobs:
             '[[migrations]]' \
             'tag = "v2"' \
             'new_classes = ["RateLimiterV2DO"]' \
+            '' \
+            '[[migrations]]' \
+            'tag = "v3"' \
+            'deleted_classes = ["RateLimiterDO"]' \
             > wrangler.toml
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
