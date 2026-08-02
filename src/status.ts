@@ -182,9 +182,10 @@ footer a{color:var(--accent);text-decoration:none}
 ${errorsHtml}
 
 <footer>
-  <div class="footer-links"><a href="/">certs.lol</a><a href="/about">about</a><a href="/cli">cli</a><a href="/api/docs">api</a><a href="https://github.com/yokedotlol/certs-lol">github</a><a href="/privacy">privacy</a><a href="/terms">terms</a></div>
+  <div class="footer-links"><a href="https://github.com/yokedotlol/certs-lol">GitHub</a><a href="/api/docs">API</a><a href="/cli">CLI</a><a href="/about">About</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div>
   <div class="footer-tagline">Part of the <a href="https://yoke.lol/tools">.lol tools</a></div>
   <div class="footer-family"><a href="https://yoke.lol">yoke</a><a href="https://ns.lol">ns</a><a href="https://xhttp.lol">xhttp</a><a href="https://vrfy.lol">vrfy</a></div>
+  <a href="https://yoke.lol/certs.lol" class="yoke-badge"><img src="https://yoke.lol/badge/certs.lol.svg" alt="Yoke score for certs.lol" height="20"></a>
 </footer>
 </div></body></html>`;
 
