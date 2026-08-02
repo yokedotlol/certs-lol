@@ -20,7 +20,7 @@ All probe endpoints require `Authorization: Bearer <FLY_AUTH_SECRET>`. The Worke
 
 ## I05 — Rate limiter uses Durable Objects, not KV
 
-`RateLimiterDO` in `rate-limiter.ts` implements a sliding window counter. All scan requests count against the 60/hr limit. The DO provides strong consistency that KV cannot.
+`RateLimiterV2DO` in `rate-limiter.ts` implements a sliding window counter. Only fresh scans count against the 60/hr limit — cache hits skip rate limits (fleet-wide, June 2026). The DO provides strong consistency that KV cannot. Keys are SHA-256 hashed IPs, not raw IPs.
 
 ## I06 — Cache TTL is 6 hours for all scans
 

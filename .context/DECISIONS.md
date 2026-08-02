@@ -71,3 +71,17 @@
 **Date:** 2026-06
 **Decision:** Every certs.lol API response includes `_meta.full_report` linking to `yoke.lol/{domain}`. Yoke never links back to or mentions certs.lol.
 **Rationale:** Yoke is the comprehensive domain intelligence tool; certs.lol is the specialist TLS scanner. The funnel drives users toward the full picture without creating circular references.
+
+## D012 — Cache hits skip rate limits (fleet-wide)
+
+**Date:** 2026-06-19
+**Decision:** Cache hits do not consume rate-limit credit. Only fresh scans (cache MISS) count against the 60/hr Durable Object window. Implements fleet-wide convention shipped June 19, 2026.
+**Rationale:** Prevents double-charging users for popular domains and aligns with .lol family invariant. vrfy.lol is the exception (PoW reuse). Overrides D004 which counted all requests.
+**Consequence:** handler.ts checks `CACHE.get()` before `checkRateLimit()`. Cached responses include `X-Cache: HIT` and `cache_hit: true`.
+
+## D013 — Aggregate counters only (privacy cleanup v2)
+
+**Date:** 2026-06-19
+**Decision:** Remove `stats:top-domains` KV key and any per-target retention. Stats are global aggregate counters only (total_scans, cache_hits, cache_misses, rate_limited, errors) plus daily rollups and last 50 scrubbed error logs. Domains and IPs scrubbed via `scrubIdentifier()` before storage.
+**Rationale:** .lol family convention: operational counters stay aggregate — must not retain requested domains, emails, IPs, query params. Privacy pages claimed aggregate-only but code previously stored top domains. Fix drift and ship cleanup for legacy keys.
+**Consequence:** Added `cleanupLegacyTargetStats()` to delete `stats:top-domains` and legacy `stats:errors` on next track, `LEGACY_CLEANUP_KEY` marker, and `scrubIdentifier()` replacement of domains/IPs with `[domain]`/`[ip]` in error logs.

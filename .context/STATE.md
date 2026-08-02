@@ -40,8 +40,8 @@ grade/               — Go grade helpers for CLI
 
 ## Storage
 
-- **KV `CACHE`** (id: `0d85dda547614346baac52f5733a05f1`) — scan cache (6h TTL), usage stats
-- **Durable Object `RateLimiterDO`** — per-IP rate limiting (60/hr)
+- **KV `CACHE`** (id: `0d85dda547614346baac52f5733a05f1`) — scan cache (6h TTL), usage stats (aggregate counters only, no domains/IPs)
+- **Durable Object `RateLimiterV2DO`** — per-IP rate limiting (60/hr, cache hits skip, hashed keys)
 - No D1
 
 ## Recent Changes

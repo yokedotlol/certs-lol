@@ -27,8 +27,8 @@ Fast, API-first TLS scanning tool at [certs.lol](https://certs.lol). Users enter
 
 ### Storage
 
-- **KV `CACHE`** — scan result caching (6h TTL), usage statistics (global, daily, top domains, error log).
-- **Durable Object `RateLimiterDO`** — per-IP rate limiting (60 requests/hour). Sliding window counter with alarm-based cleanup.
+- **KV `CACHE`** — scan result caching (6h TTL), usage statistics (global aggregate counters, daily aggregate, scrubbed error log). No per-target domain/IP retention (privacy cleanup v2 — top-domains removed).
+- **Durable Object `RateLimiterV2DO`** — per-IP rate limiting (60 requests/hour) with hashed IP keys. Cache hits skip rate limits (fleet-wide convention, June 2026). Sliding window counter with alarm-based cleanup.
 - **No D1.** All state is KV + DO.
 
 ### Endpoints
@@ -97,7 +97,7 @@ Built with goreleaser, distributed via Homebrew tap (`yokedotlol/tap/certs`) and
 - **Enrichment:** `src/enrich.ts` — HSTS, HTTP/3, DNS security (DNSSEC/CAA/DANE)
 - **Compliance:** `src/compliance.ts` — PCI DSS 4.0, NIST 800-52r2, HIPAA evaluation
 - **Rate limiter:** `src/rate-limiter.ts` — Durable Object with sliding window
-- **Usage tracking:** `src/usage.ts` — KV-based stats (global, daily, top domains, errors)
+- **Usage tracking:** `src/usage.ts` — KV-based aggregate stats (global, daily, scrubbed errors — no domains/IPs, top-domains removed for privacy)
 - **SPA renderer:** `src/spa.ts` — full HTML/CSS/JS generation
 - **Worker entry:** `src/worker.ts` — type definitions, worker export
 - **Probe — TLS scanning:** `probe/tls.go` — core `Scan()` function
