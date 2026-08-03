@@ -900,7 +900,7 @@ ${metaTags('Privacy Policy', 'certs.lol privacy policy. No personal data, no thi
 <p>TLS scan results are cached for 6 hours to improve performance. Cached data is keyed by the submitted target and contains only publicly observable TLS configuration — no private information.</p>
 
 <h2>Operational counters</h2>
-<p>We keep aggregate counters for service health: scan totals, cache hits and misses, errors, and rate-limit events. These counters do not include requested domains, IP addresses, or per-request identifiers.</p>
+<p>We keep aggregate counters for service health: scan totals, cache hits and misses, errors, and rate-limit events. We also temporarily keep the last 50 scrubbed error messages (domains and IPs redacted via <code>scrubIdentifier</code>) for debugging — no personal data, no requested domains. These counters do not include requested domains, IP addresses, or per-request identifiers.</p>
 
 <h2>Contact</h2>
 <p>Questions? <a href="mailto:hello@certs.lol">hello@certs.lol</a></p>
