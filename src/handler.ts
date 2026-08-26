@@ -5,6 +5,7 @@ import { renderStatusPage } from './status';
 import { enrich } from './enrich';
 import type { DNSSecurityInfo } from './enrich';
 import { evaluateCompliance } from './compliance';
+import openapiSpec from './openapi.json';
 
 const CACHE_TTL = 21600; // 6 hours
 const RATE_LIMIT = 60;
@@ -228,6 +229,15 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
     return jsonResponse({ status: 'ok', service: 'certs.lol' });
   }
 
+  // OpenAPI spec — not rate limited, for agent discovery (ora.ai, etc.)
+  if (path === '/openapi.json' || path === '/api/openapi.json') {
+    return addHeaders(new Response(JSON.stringify(openapiSpec, null, 2) + '\n', {
+      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=3600' },
+    }), {
+      'Access-Control-Allow-Origin': '*',
+    });
+  }
+
   // Static routes
   if (path === '/' || path === '') {
     if (wantsJSON(request)) {
@@ -300,7 +310,7 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
           identifier: "urn:air:certs.lol:api:ssl-analysis",
           displayName: "certs.lol SSL/TLS Analysis API",
           type: "application/openapi+json",
-          url: "https://certs.lol/api/docs",
+          url: "https://certs.lol/openapi.json",
           description: "Free SSL/TLS certificate analysis API — chain validation, grade, protocols, ciphers, HSTS, CT logs. No auth required.",
           representativeQueries: [
             "check the SSL certificate for example.com",
@@ -714,7 +724,7 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
 <style>${baseCSS()}</style></head><body>
 <div class="page">
 <h1>API Documentation</h1>
-<p class="muted">certs.lol is API-first. Same URL, content-negotiated.</p>
+<p class="muted">certs.lol is API-first. Same URL, content-negotiated. <a href="/openapi.json">OpenAPI 3.1 spec</a> · <a href="/.well-known/ai-catalog.json">AI catalog</a></p>
 
 <h2>Quick Start</h2>
 <pre><code>$ curl -s https://certs.lol/stripe.com | jq</code></pre>
