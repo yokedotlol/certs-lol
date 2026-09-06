@@ -210,6 +210,8 @@ h1 .t{color:#9b8afb}
 .r{display:flex;font-size:12px;line-height:2;font-family:'JetBrains Mono',monospace}
 .r .k{color:#5c5c6b;width:155px;flex-shrink:0}
 .r .v{color:#d8d8e0}
+footer{margin-top:2rem;padding-top:1rem;border-top:1px solid #1c1c24;font-size:0.75rem;color:#5c5c6b;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+footer a{color:#9b8afb;text-decoration:none}.footer-links{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}.footer-tagline{font-size:10px}.footer-family{display:flex;justify-content:center;gap:16px}.footer-family a{color:#5c5c6b}.footer-family a:hover{color:#9b8afb}
 </style></head><body>
 <div class="page">
 <h1>certs<span class="t">.lol</span> usage</h1>
@@ -232,7 +234,11 @@ ${errors.length > 0 ? `<div class="section">
   <div class="sec-label">Recent Errors</div>
   ${errorRows}
 </div>` : ''}
-
+<footer>
+  <div class="footer-links"><a href="https://github.com/yokedotlol/certs-lol">GitHub</a><a href="/api/docs">API</a><a href="/cli">CLI</a><a href="/about">About</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div>
+  <div class="footer-tagline">Part of the <a href="https://yoke.lol/tools">.lol tools</a></div>
+  <div class="footer-family"><a href="https://yoke.lol">yoke</a><a href="https://ns.lol">ns</a><a href="https://xhttp.lol">xhttp</a><a href="https://vrfy.lol">vrfy</a></div>
+</footer>
 </div></body></html>`, {
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });
