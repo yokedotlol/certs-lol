@@ -873,7 +873,7 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
 <p>Each finding has a <code>status</code>: <code>pass</code>, <code>fail</code>, or <code>warn</code>. A framework <code>meets_requirements</code> when all findings are <code>pass</code> or <code>warn</code> (warnings don't cause failure).</p>
 
 <h2>Rate Limit Headers</h2>
-<p>Every response includes standard rate limit headers:</p>
+<p>Scan responses (<code>/{domain}</code>, fresh or cached) include standard rate limit headers:</p>
 <ul>
 <li><code>X-RateLimit-Limit</code> — max requests per window (60)</li>
 <li><code>X-RateLimit-Remaining</code> — scans left in current window</li>

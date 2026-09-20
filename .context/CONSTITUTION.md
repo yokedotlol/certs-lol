@@ -75,7 +75,7 @@ Built with goreleaser, distributed via Homebrew tap (`yokedotlol/tap/certs`) and
 
 ### Cloudflare ($5/mo Workers Paid plan)
 - **Uncached scan:** 1 DO check (rate limit), 1 fetch to probe, 1 HEAD to target (HSTS), 1 fetch to probe (HTTP/3), 3 DoH fetches (DNSSEC/CAA/DANE), 1 KV write (cache), ~4 KV writes (stats)
-- **Cached scan:** 1 DO check, 1 KV read (cache hit), ~2 KV writes (stats)
+- **Cached scan:** 1 KV read (cache hit), ~2 KV writes (stats) — the rate-limiter DO is never touched on cache hits
 
 ### Fly Probe
 - **Shared with Yoke** — no separate Fly app for certs.lol. Probe is `yoke-probe.fly.dev`.
