@@ -432,6 +432,14 @@ Not one-command self-hostable yet, but it's MIT — knock yourself out. You'll n
 - **Homebrew:** `brew install yokedotlol/tap/certs`
 - **Source:** https://github.com/yokedotlol/certs-lol
 
+## Privacy
+
+The `certs` CLI never contacts certs.lol servers — TLS scans connect directly from
+your machine to the target. Enrichment checks also query `hstspreload.org` and
+Cloudflare DoH for DNSSEC/CAA/DANE data (`--probe-only` to skip these). Web API
+scans send the target domain only. No accounts, no tracking. You can always
+self-host if you need privacy.
+
 ## Family
 
 Part of the [.lol developer tools](https://yoke.lol) family:
