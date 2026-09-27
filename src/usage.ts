@@ -114,10 +114,11 @@ export async function trackScan(env: Env, event: {
 }
 
 export async function handleUsage(request: Request, env: Env): Promise<Response> {
-  // Admin key auth — accept ?key=, Bearer token, or Basic auth (password = ADMIN_KEY)
-  const url = new URL(request.url);
+  // Admin key auth — Bearer token or Basic auth (password = ADMIN_KEY).
+  // Query-param auth (?key=) is intentionally unsupported: credentials must
+  // never appear in URLs (server logs, browser history, CDN analytics).
   const authHeader = request.headers.get('Authorization') || '';
-  let key = url.searchParams.get('key') || '';
+  let key = '';
 
   // Bearer token
   if (!key && authHeader.startsWith('Bearer ')) {
