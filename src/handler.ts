@@ -444,7 +444,9 @@ export async function handleRequest(request: Request, env: Env, ctx: ExecutionCo
       });
     }
     const cachedNonce = crypto.randomUUID();
-    return htmlResponse(html(result, undefined, { remaining: RATE_LIMIT, limit: RATE_LIMIT }, cachedNonce), 200, cachedNonce);
+    // Cache hits don't consume rate-limit credit and the limiter is not queried on
+    // this path, so no remaining-quota pill is shown (it would be fabricated).
+    return htmlResponse(html(result, undefined, undefined, cachedNonce), 200, cachedNonce);
   }
 
   // Rate limit check — only fresh scans count
@@ -758,7 +760,7 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
 
 <h2>Rate Limiting</h2>
 <ul>
-<li><strong>60 requests per hour</strong> per IP — rolling window</li>
+<li><strong>60 requests per hour</strong> per IP — fixed 1-hour window</li>
 <li>Results cached for 6h — add <code>?force</code> to bypass, but force-scans still count</li>
 <li>Cached results do not count against the limit</li>
 <li>429 response with <code>Retry-After</code> header when exceeded</li>
@@ -873,10 +875,10 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
 <p>Each finding has a <code>status</code>: <code>pass</code>, <code>fail</code>, or <code>warn</code>. A framework <code>meets_requirements</code> when all findings are <code>pass</code> or <code>warn</code> (warnings don't cause failure).</p>
 
 <h2>Rate Limit Headers</h2>
-<p>Scan responses (<code>/{domain}</code>, fresh or cached) include standard rate limit headers:</p>
+<p>Fresh scan responses (<code>/{domain}</code>) include standard rate limit headers. Cache hits include only <code>X-RateLimit-Limit</code> — they don't consume credit, so <code>X-RateLimit-Remaining</code> is omitted:</p>
 <ul>
 <li><code>X-RateLimit-Limit</code> — max requests per window (60)</li>
-<li><code>X-RateLimit-Remaining</code> — scans left in current window</li>
+<li><code>X-RateLimit-Remaining</code> — scans left in current window (fresh scans and 429s only)</li>
 <li><code>X-RateLimit-Reset</code> — seconds until window resets (429 responses only)</li>
 </ul>
 
@@ -898,7 +900,7 @@ ${metaTags('Privacy Policy', 'certs.lol privacy policy. No personal data, no thi
 <p class="muted">Last updated: July 2026</p>
 
 <h2>What we collect</h2>
-<p>certs.lol does not collect personal data. There are no accounts, cookies, third-party analytics, tracking pixels, or third-party scripts.</p>
+<p>certs.lol does not collect personal data. There are no accounts, cookies, third-party analytics, or tracking pixels. The web UI loads fonts from Google Fonts, which receives your IP address when the font stylesheet is fetched.</p>
 
 <h2>Server logs</h2>
 <p>Cloudflare processes requests as our CDN and compute provider. Their standard edge logs (IP, URL, timestamp) are subject to <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare's privacy policy</a>. We do not access, store, or process these logs.</p>
@@ -908,6 +910,9 @@ ${metaTags('Privacy Policy', 'certs.lol privacy policy. No personal data, no thi
 
 <h2>Scan data</h2>
 <p>TLS scan results are cached for 6 hours to improve performance. Cached data is keyed by the submitted target and contains only publicly observable TLS configuration — no private information.</p>
+
+<h2>Third-party services</h2>
+<p>On a fresh scan, the submitted domain is sent to the services needed to produce the report: a Fly.io-hosted probe performs the live TLS connection to the target, <code>hstspreload.org</code> is checked for HSTS preload status, Cloudflare's DNS-over-HTTPS resolver is queried for DNSSEC/CAA/DANE records, and domain-intelligence signals are fetched from yoke.lol via a service binding. Only the target domain is sent — no client information is forwarded. The CLI discloses the same third-party checks on its <a href="/cli">CLI page</a>.</p>
 
 <h2>Operational counters</h2>
 <p>We keep aggregate counters for service health: scan totals, cache hits and misses, errors, and rate-limit events. We also temporarily keep the last 50 scrubbed error messages (domains and IPs redacted via <code>scrubIdentifier</code>) for debugging — no personal data, no requested domains. These counters do not include requested domains, IP addresses, or per-request identifiers.</p>

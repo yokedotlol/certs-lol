@@ -1,7 +1,7 @@
 /**
  * Durable Object for precise per-IP rate limiting.
  * Each IP gets its own DO instance via id-from-name.
- * Stores a sliding window counter with atomic read-increment-write.
+ * Stores a fixed-window counter with atomic read-increment-write.
  */
 
 const RATE_LIMIT = 60;

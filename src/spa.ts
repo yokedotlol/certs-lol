@@ -265,7 +265,7 @@ document.getElementById('scanForm').addEventListener('submit',(e)=>{
   document.getElementById('rlTitle').style.color=color;
   document.getElementById('rlBarFill').style.width=Math.min((used/l)*100,100)+'%';
   document.getElementById('rlBarFill').style.background=color;
-  document.getElementById('rlInfo').textContent=used+' of '+l+' scans used this hour\\nRolling 1-hour window';
+  document.getElementById('rlInfo').textContent=used+' of '+l+' scans used this hour\\nFixed 1-hour window';
   pill.addEventListener('mouseenter',function(){detail.classList.add('visible')});
   pill.addEventListener('mouseleave',function(){detail.classList.remove('visible')});
   pill.addEventListener('click',function(){detail.classList.toggle('visible')});
