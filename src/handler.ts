@@ -661,7 +661,7 @@ function bimiSvg(): string {
 }
 
 function securityTxt(): string {
-  return `Contact: https://github.com/yokedotlol/certs-lol/issues
+  return `Contact: mailto:hello@certs.lol
 Expires: 2027-06-12T00:00:00.000Z
 Preferred-Languages: en
 Canonical: https://certs.lol/.well-known/security.txt
