@@ -218,6 +218,7 @@ Scanning:
       --probe-only        Skip enrichment (HSTS/DNS/compliance)
       --no-private        Block private/reserved IPs
   -v, --verbose           Show connection diagnostics
+      --no-color          Disable ANSI colors (also: NO_COLOR env)
       --mx                Resolve MX records and scan mail servers
 
 Assertions:

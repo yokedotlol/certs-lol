@@ -744,7 +744,7 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
 
 <h3>GET /{ip}</h3>
 <p>Scan a specific IP address. DNS-dependent fields (CAA, DANE, DNSSEC, multi-IP) are omitted.</p>
-<pre><code>$ curl -s https://certs.lol/1.1.1.1 | jq '.certificate.subject'
+<pre><code>$ curl -s https://certs.lol/1.1.1.1 | jq '.subject'
 "cloudflare-dns.com"</code></pre>
 
 <h3>GET /</h3>
@@ -1241,6 +1241,8 @@ jobs:
 <tr><td><code>--out</code></td><td><code>-o</code></td><td>—</td><td>Write results to directory</td></tr>
 <tr><td><code>--workers</code></td><td><code>-w</code></td><td>10</td><td>Concurrent workers (bulk)</td></tr>
 <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>false</td><td>Suppress progress</td></tr>
+<tr><td><code>--verbose</code></td><td><code>-v</code></td><td>false</td><td>Show connection diagnostics</td></tr>
+<tr><td><code>--no-color</code></td><td>—</td><td>false</td><td>Disable ANSI colors (also: NO_COLOR env)</td></tr>
 </table>
 
 <h2>Source</h2>
