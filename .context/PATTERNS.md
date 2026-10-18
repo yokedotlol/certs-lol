@@ -43,7 +43,7 @@ All HTML/CSS/JS lives in `src/spa.ts` as a single function that returns a comple
 
 ## Rate Limiter Is a Durable Object
 
-Per-IP rate limiting uses a CF Durable Object with sliding window counters and alarm-based cleanup. NOT KV-based (KV is eventually consistent — bad for rate limiting).
+Per-IP rate limiting uses a CF Durable Object with fixed-window counters and alarm-based cleanup. NOT KV-based (KV is eventually consistent — bad for rate limiting).
 
 60 requests/hour per IP. Cache hits skip the rate limiter (D012, June 19 2026: only fresh scans count against the quota).
 

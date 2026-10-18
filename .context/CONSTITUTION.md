@@ -28,7 +28,7 @@ Fast, API-first TLS scanning tool at [certs.lol](https://certs.lol). Users enter
 ### Storage
 
 - **KV `CACHE`** — scan result caching (6h TTL), usage statistics (global aggregate counters, daily aggregate, scrubbed error log). No per-target domain/IP retention (privacy cleanup v2 — top-domains removed).
-- **Durable Object `RateLimiterV2DO`** — per-IP rate limiting (60 requests/hour) with hashed IP keys. Cache hits skip rate limits (fleet-wide convention, June 2026). Sliding window counter with alarm-based cleanup.
+- **Durable Object `RateLimiterV2DO`** — per-IP rate limiting (60 requests/hour) with hashed IP keys. Cache hits skip rate limits (fleet-wide convention, June 2026). Fixed-window counter with alarm-based cleanup.
 - **No D1.** All state is KV + DO.
 
 ### Endpoints
@@ -40,7 +40,7 @@ Fast, API-first TLS scanning tool at [certs.lol](https://certs.lol). Users enter
 | `GET /:target?force` | Bypass cache, force fresh scan |
 | `GET /` | Service info (JSON for API clients, SPA for browsers) |
 | `GET /api/docs` | API documentation page |
-| `GET /usage?key=ADMIN_KEY` | Usage dashboard (admin-only) |
+| `GET /usage` | Usage dashboard (admin-only; Bearer or Basic auth — query-param auth is intentionally unsupported) |
 | `GET /cli` | CLI installation and documentation page |
 | `GET /install.sh` | CLI installer script |
 | `GET /about` | About page |
@@ -96,7 +96,7 @@ Built with goreleaser, distributed via Homebrew tap (`yokedotlol/tap/certs`) and
 - **Request handler:** `src/handler.ts` — routing, scan orchestration, static pages
 - **Enrichment:** `src/enrich.ts` — HSTS, HTTP/3, DNS security (DNSSEC/CAA/DANE)
 - **Compliance:** `src/compliance.ts` — PCI DSS 4.0, NIST 800-52r2, HIPAA evaluation
-- **Rate limiter:** `src/rate-limiter.ts` — Durable Object with sliding window
+- **Rate limiter:** `src/rate-limiter.ts` — Durable Object with fixed window
 - **Usage tracking:** `src/usage.ts` — KV-based aggregate stats (global, daily, scrubbed errors — no domains/IPs, top-domains removed for privacy)
 - **SPA renderer:** `src/spa.ts` — full HTML/CSS/JS generation
 - **Worker entry:** `src/worker.ts` — type definitions, worker export

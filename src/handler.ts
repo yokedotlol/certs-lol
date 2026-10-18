@@ -882,6 +882,9 @@ ${metaTags('API Documentation', 'certs.lol API reference. Scan any domain or IP 
 <li><code>X-RateLimit-Reset</code> — seconds until window resets (429 responses only)</li>
 </ul>
 
+<h2>Privacy</h2>
+<p>No API keys. No accounts. No tracking. Scan results are cached in Cloudflare KV keyed by the scanned target for 6 hours. Usage is recorded only as aggregate counters (scan totals, cache hits/misses, errors), never with scanned targets or IP addresses, and rate limiting keys on a SHA-256 hashed IP. Scans use a Fly.io probe plus hstspreload.org and Cloudflare DoH for enrichment. Full policy: <a href="/privacy">Privacy</a>.</p>
+
 <h2>No Auth Required</h2>
 <p>No API keys. No accounts. No tracking. Just data.</p>
 

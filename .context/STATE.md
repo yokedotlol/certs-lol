@@ -20,7 +20,7 @@ src/
   enrich.ts          — HSTS, HTTP/3, DNSSEC/CAA/DANE enrichment
   compliance.ts      — PCI DSS 4.0, NIST 800-52r2, HIPAA mapping
   compliance.test.ts — bun:test compliance tests
-  rate-limiter.ts    — Durable Object sliding window rate limiter
+  rate-limiter.ts    — Durable Object fixed-window rate limiter
   usage.ts           — KV-based usage/stats tracking
   spa.ts             — full HTML SPA generation
 probe/
