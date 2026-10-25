@@ -1163,8 +1163,8 @@ targets:
   - api.example.com
   - cdn.example.com
   - payments.example.com</code></pre>
-<pre><code># Uses .certs.yaml from current directory
-certs
+<pre><code># Uses .certs.yaml from current directory (config supplies the targets)
+certs --config .certs.yaml
 
 # Or specify config
 certs --config path/to/.certs.yaml</code></pre>

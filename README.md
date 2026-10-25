@@ -176,8 +176,8 @@ assertions:
 ```
 
 ```bash
-# Uses .certs.yaml from current directory
-certs
+# Uses .certs.yaml from current directory (config supplies the targets)
+certs --config .certs.yaml
 
 # Explicit config file
 certs --config path/to/config.yaml

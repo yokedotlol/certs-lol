@@ -67,7 +67,7 @@ Go binary at `cli/` with same TLS scanning engine as the probe:
 - **Assert mode** (`--assert` / `--profile`) — CI/CD gating with pass/fail exit codes
 - **MX mode** (`--mx`) — resolve MX records and scan mail server TLS (port 25 STARTTLS)
 - **Compare mode** (`compare a b`) — side-by-side comparison of two targets
-- **Bulk mode** (stdin) — scan multiple targets from a file/pipe
+- **Bulk mode** (file / multiple targets) — scan multiple targets from a file or target list
 
 Built with goreleaser, distributed via Homebrew tap (`yokedotlol/tap/certs`) and GitHub Releases.
 

@@ -6,7 +6,7 @@
 
 - **Live at:** [certs.lol](https://certs.lol)
 - **Repo:** [yokedotlol/certs-lol](https://github.com/yokedotlol/certs-lol) (public)
-- **Codebase:** ~6,780 lines across TypeScript Worker + Go probe + Go CLI
+- **Codebase:** ~7,968 lines across TypeScript Worker + Go probe + Go CLI
 - **CI:** Two GitHub Actions workflows — `deploy.yml` (CF Worker), `release-cli.yml` (GoReleaser)
 - **CLI:** v1.3.0 via Homebrew (`yokedotlol/tap/certs`) and GitHub Releases
 - **Probe:** Shared with Yoke at `yoke-probe.fly.dev`
@@ -35,7 +35,6 @@ probe/
   types.go           — shared types
 cli/                 — Go CLI binary
 enrich/              — Go enrichment helpers
-grade/               — Go grade helpers for CLI
 ```
 
 ## Storage

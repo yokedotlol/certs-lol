@@ -48,7 +48,7 @@ The Fly machine at `yoke-probe.fly.dev` serves both Yoke and certs.lol. Probe co
 
 ## I12 — `_meta.full_report` links to Yoke on every API response
 
-Every JSON response includes `_meta.full_report: "https://yoke.lol/{domain}"`. This is the one-way funnel. Yoke never links back.
+Every domain-scan JSON response includes `_meta.full_report: "https://yoke.lol/{domain}"` (IP scans omit it). This is the one-way funnel. Yoke never links back.
 
 ## I13 — CLI matches API response shape in JSON mode
 
