@@ -443,7 +443,7 @@ function renderResult(d: ScanResult, hook: string[], isIP: boolean): string {
       row('dane-ee (usage 3)', dance.checks.dane_ee ? '✓' : '—', dance.checks.dane_ee ? 'ok' : 'off'),
       row('dane-ta (usage 2)', dance.checks.dane_ta ? '✓' : '—', dance.checks.dane_ta ? 'ok' : 'off'),
       row('smtp dane', dance.checks.smtp_tlsa ? '✓' : '—', dance.checks.smtp_tlsa ? 'ok' : 'off'),
-      row('', 'draft-ietf-dance-client-auth (Proposed Standard)', 'off'),
+      row('', 'draft-ietf-dance-client-auth-17 (IESG-approved, RFC pending)', 'off'),
     ];
     s += section('DANCE', danceRows);
   }

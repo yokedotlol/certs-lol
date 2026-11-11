@@ -131,7 +131,8 @@ function htmlResponse(body: string, status = 200, nonce?: string): Response {
  * Combines DNS security data (DNSSEC, TLSA records) with TLS probe data (protocol support)
  * to assess whether a domain has the infrastructure for DANE-based mutual TLS client auth.
  *
- * Reference: draft-ietf-dance-client-auth-12 (IESG-approved, Proposed Standard)
+ * Reference: draft-ietf-dance-client-auth-17 (IESG-approved Nov 5, 2026; RFC pending.
+ * _client/_device TLSA underscored names registered 2026-11-09.)
  */
 function computeDANCE(protocols: string[], dnsSec: DNSSecurityInfo | null): DANCEInfo | null {
   if (!dnsSec) return null;
@@ -693,7 +694,7 @@ No authentication required. Rate limit: 60 requests/hour per IP. Results cached 
 - HSTS: max-age, includeSubDomains, preload list status
 - HTTP/2 and HTTP/3 (QUIC)
 - DNS security: DNSSEC, CAA, DANE/TLSA, SMTP DANE
-- DANCE readiness: DANE-based mutual TLS client authentication (draft-ietf-dance-client-auth)
+- DANCE readiness: DANE-based mutual TLS client authentication (draft-ietf-dance-client-auth-17, IESG-approved, RFC pending)
 - Compliance: PCI DSS 4.0, NIST SP 800-52r2, HIPAA transport requirements
 
 ## Related
